@@ -1,0 +1,2459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dual LLM Multi-Game Interface</title>
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border: #e2e8f0;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --llm-a: #8b5cf6;
+            --llm-b: #06b6d4;
+            --checkers-red: #dc2626;
+            --checkers-black: #374151;
+            --story-bg: #fef3c7;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #334155;
+            --accent: #60a5fa;
+            --accent-hover: #3b82f6;
+            --llm-a: #a78bfa;
+            --llm-b: #22d3ee;
+            --story-bg: #451a03;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--llm-a), var(--llm-b));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .theme-toggle {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 50px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-tertiary);
+            transform: translateY(-1px);
+        }
+
+        .config-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .llm-config {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            border: 2px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .llm-config:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .llm-config h3 {
+            margin-bottom: 20px;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .llm-a-config h3 {
+            color: var(--llm-a);
+        }
+
+        .llm-b-config h3 {
+            color: var(--llm-b);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 12px 20px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .mode-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .mode-btn:hover {
+            border-color: var(--accent);
+        }
+
+        .game-setup {
+            margin-bottom: 30px;
+        }
+
+        .topic-section {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            border: 2px solid var(--border);
+        }
+
+        .story-setup {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 20px;
+            align-items: end;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .game-board {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 30px;
+            border: 2px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Chess Board Styles */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 1px;
+            aspect-ratio: 1;
+            max-width: 400px;
+            margin: 0 auto;
+            border: 2px solid #8b4513;
+        }
+
+        .square {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            aspect-ratio: 1;
+            position: relative;
+        }
+
+        .square.light {
+            background-color: #f0d9b5;
+        }
+
+        .square.dark {
+            background-color: #b58863;
+        }
+
+        .square.highlight {
+            background-color: #ffff99 !important;
+            box-shadow: inset 0 0 10px rgba(255, 255, 0, 0.5);
+        }
+
+        /* Checkers Board Styles */
+        .checkers-board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            width: 400px;
+            height: 400px;
+            border: 3px solid #8b4513;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .checkers-square {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .checkers-square.light {
+            background-color: #f0d9b5;
+        }
+
+        .checkers-square.dark {
+            background-color: #b58863;
+        }
+
+        .checkers-square.highlight {
+            background-color: #ffff99 !important;
+            box-shadow: inset 0 0 15px rgba(255, 255, 0, 0.8);
+        }
+
+        .checkers-piece {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            border: 3px solid #2c3e50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .checkers-piece.red {
+            background: radial-gradient(circle at 30% 30%, #ef4444, #dc2626);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .checkers-piece.black {
+            background: radial-gradient(circle at 30% 30%, #4b5563, #374151);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .checkers-piece.king::after {
+            content: '♔';
+            position: absolute;
+            font-size: 0.8em;
+            color: gold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        /* Othello Board Styles */
+        .othello-board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 1px;
+            width: 400px;
+            height: 400px;
+            border: 3px solid #2c3e50;
+            border-radius: 8px;
+            background: #2c3e50;
+            overflow: hidden;
+        }
+
+        .othello-square {
+            background-color: #16a085;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .othello-square:hover {
+            background-color: #148f77;
+        }
+
+        .othello-square.highlight {
+            background-color: #f1c40f !important;
+            animation: pulse 1.5s infinite;
+        }
+
+        .othello-square.possible-move {
+            background-color: rgba(241, 196, 64, 0.4) !important;
+        }
+
+        .othello-piece {
+            width: 85%;
+            height: 85%;
+            border-radius: 50%;
+            border: 2px solid #2c3e50;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .othello-piece.black {
+            background: radial-gradient(circle at 30% 30%, #34495e, #2c3e50);
+        }
+
+        .othello-piece.white {
+            background: radial-gradient(circle at 30% 30%, #ffffff, #ecf0f1);
+        }
+
+        .othello-piece.flipping {
+            animation: flip 0.6s ease-in-out;
+        }
+
+        @keyframes flip {
+            0%, 100% { transform: rotateY(0deg); }
+            50% { transform: rotateY(180deg) scale(1.1); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Story Writing Styles */
+        .story-container {
+            grid-column: 1 / -1;
+            background: var(--story-bg);
+            border-radius: 16px;
+            padding: 30px;
+            border: 2px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .story-text {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 25px;
+            min-height: 400px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            font-family: 'Georgia', serif;
+            border: 2px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .story-sentence {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .story-sentence.llm-a {
+            background: rgba(139, 92, 246, 0.1);
+            border-left: 3px solid var(--llm-a);
+        }
+
+        .story-sentence.llm-b {
+            background: rgba(6, 182, 212, 0.1);
+            border-left: 3px solid var(--llm-b);
+        }
+
+        .story-sentence.new {
+            animation: fadeInSlide 0.8s ease;
+        }
+
+        @keyframes fadeInSlide {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .game-info {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 25px;
+            border: 2px solid var(--border);
+            height: fit-content;
+        }
+
+        .game-status {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .game-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            background: var(--bg-primary);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .moves-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .current-position {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            word-break: break-all;
+        }
+
+        .controls {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .conversation {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            min-height: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+            border: 2px solid var(--border);
+            padding: 20px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            padding: 16px;
+            border-radius: 12px;
+            animation: slideIn 0.3s ease;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-llm-a {
+            background: linear-gradient(135deg, var(--llm-a), rgba(139, 92, 246, 0.1));
+            border-left: 4px solid var(--llm-a);
+            margin-right: 60px;
+        }
+
+        .message-llm-b {
+            background: linear-gradient(135deg, var(--llm-b), rgba(6, 182, 212, 0.1));
+            border-left: 4px solid var(--llm-b);
+            margin-left: 60px;
+        }
+
+        .message-header {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .message-content {
+            line-height: 1.7;
+        }
+
+        .status {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border);
+            border-radius: 50%;
+            border-top-color: var(--accent);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: var(--bg-tertiary);
+            padding: 16px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-size: 0.875rem;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat .stat-label {
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .config-section {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .game-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .game-info {
+                order: -1;
+            }
+            
+            .story-setup {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .message-llm-a {
+                margin-right: 20px;
+            }
+            
+            .message-llm-b {
+                margin-left: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .board, .checkers-board, .othello-board {
+                width: 300px;
+                height: 300px;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <div class="container">
+        <div class="header">
+            <h1>Dual LLM Multi-Game Interface</h1>
+            <button class="theme-toggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+        </div>
+
+        <div class="config-section">
+            <div class="llm-config llm-a-config">
+                <h3>🤖 LLM A Configuration</h3>
+                <div class="form-group">
+                    <label for="endpointA">API Endpoint</label>
+                    <input type="text" id="endpointA" placeholder="https://api.openai.com/v1/chat/completions" 
+                           value="https://api.openai.com/v1/chat/completions">
+                </div>
+                <div class="form-group">
+                    <label for="apiKeyA">API Key</label>
+                    <input type="password" id="apiKeyA" placeholder="sk-...">
+                </div>
+                <div class="form-group">
+                    <label for="modelA">Model</label>
+                    <input type="text" id="modelA" placeholder="gpt-4" value="gpt-4">
+                </div>
+                <div class="form-group">
+                    <label for="systemPromptA">System Prompt</label>
+                    <textarea id="systemPromptA" placeholder="You are a helpful assistant who...">You are a thoughtful and articulate participant in a structured debate. Present your arguments clearly and respond constructively to counterpoints.</textarea>
+                </div>
+            </div>
+
+            <div class="llm-config llm-b-config">
+                <h3>🤖 LLM B Configuration</h3>
+                <div class="form-group">
+                    <label for="endpointB">API Endpoint</label>
+                    <input type="text" id="endpointB" placeholder="https://api.openai.com/v1/chat/completions" 
+                           value="https://api.openai.com/v1/chat/completions">
+                </div>
+                <div class="form-group">
+                    <label for="apiKeyB">API Key</label>
+                    <input type="password" id="apiKeyB" placeholder="sk-...">
+                </div>
+                <div class="form-group">
+                    <label for="modelB">Model</label>
+                    <input type="text" id="modelB" placeholder="gpt-3.5-turbo" value="gpt-3.5-turbo">
+                </div>
+                <div class="form-group">
+                    <label for="systemPromptB">System Prompt</label>
+                    <textarea id="systemPromptB" placeholder="You are a helpful assistant who...">You are a thoughtful and articulate participant in a structured debate. Challenge ideas respectfully and offer alternative perspectives with supporting evidence.</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="setMode('conversation')" id="conversationMode">💬 Conversation</button>
+            <button class="mode-btn" onclick="setMode('chess')" id="chessMode">♟️ Chess</button>
+            <button class="mode-btn" onclick="setMode('checkers')" id="checkersMode">🔴 Checkers</button>
+            <button class="mode-btn" onclick="setMode('othello')" id="othelloMode">⚫ Othello</button>
+            <button class="mode-btn" onclick="setMode('story')" id="storyMode">📖 Story</button>
+        </div>
+
+        <!-- Conversation Mode -->
+        <div class="game-setup" id="conversationSection">
+            <div class="topic-section">
+                <div class="form-group">
+                    <label for="topic">Conversation Topic</label>
+                    <textarea id="topic" placeholder="Enter the topic or initial prompt for the conversation...">Discuss the ethical implications of artificial intelligence in healthcare decision-making.</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Story Mode -->
+        <div class="game-setup" id="storySection" style="display: none;">
+            <div class="topic-section">
+                <div class="form-group">
+                    <label for="storyPrompt">Story Prompt</label>
+                    <textarea id="storyPrompt" placeholder="Enter a story prompt to begin the collaborative writing..." style="font-family: Georgia, serif;">It was a dark and stormy night when the mysterious package arrived at Sarah's doorstep...</textarea>
+                </div>
+                <div class="story-setup">
+                    <div class="form-group">
+                        <label for="storyGenre">Genre</label>
+                        <select id="storyGenre">
+                            <option value="mystery">Mystery</option>
+                            <option value="fantasy">Fantasy</option>
+                            <option value="scifi">Sci-Fi</option>
+                            <option value="romance">Romance</option>
+                            <option value="horror">Horror</option>
+                            <option value="comedy">Comedy</option>
+                            <option value="adventure">Adventure</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sentenceLimit">Sentences per Turn</label>
+                        <input type="number" id="sentenceLimit" value="3" min="1" max="5">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chess Game Container -->
+        <div class="game-container" id="chessContainer" style="display: none;">
+            <div class="game-board">
+                <h3 style="margin-bottom: 20px; color: var(--text-primary);">Chess Board</h3>
+                <div class="board" id="chessBoard"></div>
+            </div>
+            <div class="game-info">
+                <div class="game-status" id="gameStatus">Ready to start</div>
+                <div class="form-group">
+                    <label>Move History</label>
+                    <div class="moves-list" id="movesList">Game not started</div>
+                </div>
+                <div class="form-group">
+                    <label>Current Position (FEN)</label>
+                    <div class="current-position" id="currentFEN">rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Checkers Game Container -->
+        <div class="game-container" id="checkersContainer" style="display: none;">
+            <div class="game-board">
+                <h3 style="margin-bottom: 20px; color: var(--text-primary);">Checkers Board</h3>
+                <div class="checkers-board" id="checkersBoard"></div>
+            </div>
+			<div class="game-info">
+				<div class="game-status" id="checkersStatus">Ready to start</div>
+				<div class="game-stats">
+					<div class="stat-item">
+                        <div class="stat-value" style="color: var(--checkers-red);" id="redPieces">12</div>
+                        <div class="stat-label">Red Pieces</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: var(--checkers-black);" id="blackPieces">12</div>
+                        <div class="stat-label">Black Pieces</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Move History</label>
+                    <div class="moves-list" id="checkersHistory">Game not started</div>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); text-align: center; margin-top: 10px;">
+                    Format: A1-B2 or A1xC3 (capture)
+                </div>
+            </div>
+        </div>
+
+        <!-- Othello Game Container -->
+        <div class="game-container" id="othelloContainer" style="display: none;">
+            <div class="game-board">
+                <h3 style="margin-bottom: 20px; color: var(--text-primary);">Othello Board</h3>
+                <div class="othello-board" id="othelloBoard"></div>
+            </div>
+            <div class="game-info">
+                <div class="game-status" id="othelloStatus">Ready to start</div>
+                <div class="game-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: var(--checkers-black);" id="blackDiscs">2</div>
+                        <div class="stat-label">Black Discs</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: var(--text-primary);" id="whiteDiscs">2</div>
+                        <div class="stat-label">White Discs</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Move History</label>
+                    <div class="moves-list" id="othelloHistory">Game not started</div>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); text-align: center; margin-top: 10px;">
+                    Format: A1, B2, etc. or "pass"
+                </div>
+            </div>
+        </div>
+
+        <!-- Story Writing Container -->
+        <div class="story-container" id="storyContainer" style="display: none;">
+            <h3 style="margin-bottom: 20px; color: var(--text-primary); text-align: center;">📖 Collaborative Story</h3>
+            <div class="story-text" id="storyText">
+                <div style="text-align: center; color: var(--text-secondary); font-style: italic; padding: 40px;">
+                    The story will appear here as the LLMs collaborate...
+                </div>
+            </div>
+            <div class="game-info" style="margin-top: 20px;">
+                <div class="game-status" id="storyStatus">Ready to begin story</div>
+                <div class="game-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="wordCount">0</div>
+                        <div class="stat-label">Words</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="sentenceCount">0</div>
+                        <div class="stat-label">Sentences</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Story Progress</label>
+                    <div class="moves-list" id="storyProgress" style="max-height: 150px;">Story not started</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-primary" onclick="startConversation()" id="startBtn">Start Game</button>
+            <button class="btn-danger" onclick="stopConversation()" id="stopBtn" disabled>Stop Game</button>
+            <button class="btn-success" onclick="exportConversation()" id="exportBtn" disabled>Export Results</button>
+        </div>
+
+        <div class="conversation" id="conversation">
+            <div class="empty-state">
+                <div class="empty-state-icon">💬</div>
+                <p>Configure your LLMs above and click "Start Game" to begin</p>
+            </div>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat">
+                <div class="stat-value" id="messageCount">0</div>
+                <div class="stat-label">Messages</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="duration">00:00</div>
+                <div class="stat-label">Duration</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="currentSpeaker">-</div>
+                <div class="stat-label">Current Turn</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let conversationData = {
+            topic: '',
+            participants: [],
+            conversation: [],
+            startTime: null,
+            endTime: null
+        };
+
+        let isRunning = false;
+        let currentTurn = 'llm_a';
+        let conversationHistory = [];
+        let durationInterval;
+        let currentMode = 'conversation';
+
+        // Game state objects
+        let chessGame = {
+            board: null,
+            moves: [],
+            currentFEN: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+            gameOver: false,
+            winner: null,
+            whiteToMove: true,
+            castlingRights: { K: true, Q: true, k: true, q: true },
+            enPassantTarget: null,
+            lastMove: null
+        };
+
+        let checkersGame = {
+            board: null,
+            moves: [],
+            gameOver: false,
+            winner: null,
+            currentPlayer: 'red'
+        };
+
+        let othelloGame = {
+            board: null,
+            moves: [],
+            gameOver: false,
+            winner: null,
+            currentPlayer: 'black',
+            blackCount: 2,
+            whiteCount: 2
+        };
+
+        let storyGame = {
+            sentences: [],
+            currentSentences: [],
+            wordCount: 0,
+            sentenceCount: 0,
+            prompt: '',
+            genre: 'mystery'
+        };
+
+        const initialChessBoard = [
+            ['r','n','b','q','k','b','n','r'],
+            ['p','p','p','p','p','p','p','p'],
+            [' ',' ',' ',' ',' ',' ',' ',' '],
+            [' ',' ',' ',' ',' ',' ',' ',' '],
+            [' ',' ',' ',' ',' ',' ',' ',' '],
+            [' ',' ',' ',' ',' ',' ',' ',' '],
+            ['P','P','P','P','P','P','P','P'],
+            ['R','N','B','Q','K','B','N','R']
+        ];
+
+        const pieceSymbols = {
+            'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
+            'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟',
+            ' ': ''
+        };
+
+        function toggleTheme() {
+            const body = document.body;
+            const themeToggle = document.querySelector('.theme-toggle');
+            
+            if (body.getAttribute('data-theme') === 'light') {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️ Light Mode';
+            } else {
+                body.setAttribute('data-theme', 'light');
+                themeToggle.textContent = '🌙 Dark Mode';
+            }
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            
+            // Update button states
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(mode + 'Mode').classList.add('active');
+            
+            // Show/hide relevant sections
+            document.getElementById('conversationSection').style.display = mode === 'conversation' ? 'block' : 'none';
+            document.getElementById('storySection').style.display = mode === 'story' ? 'block' : 'none';
+            document.getElementById('chessContainer').style.display = mode === 'chess' ? 'grid' : 'none';
+            document.getElementById('checkersContainer').style.display = mode === 'checkers' ? 'grid' : 'none';
+            document.getElementById('othelloContainer').style.display = mode === 'othello' ? 'grid' : 'none';
+            document.getElementById('storyContainer').style.display = mode === 'story' ? 'block' : 'none';
+            
+            // Update system prompts based on mode
+            updateSystemPrompts(mode);
+            
+            // Initialize the selected game
+            if (mode === 'chess') {
+                initializeChessBoard();
+            } else if (mode === 'checkers') {
+                initializeCheckers();
+            } else if (mode === 'othello') {
+                initializeOthello();
+            } else if (mode === 'story') {
+                initializeStory();
+            }
+        }
+
+        function updateSystemPrompts(mode) {
+            const prompts = {
+                conversation: {
+                    a: 'You are a thoughtful and articulate participant in a structured debate. Present your arguments clearly and respond constructively to counterpoints.',
+                    b: 'You are a thoughtful and articulate participant in a structured debate. Challenge ideas respectfully and offer alternative perspectives with supporting evidence.'
+                },
+                chess: {
+                    a: 'You are playing chess as White. You must respond with only valid chess moves in standard algebraic notation (like "e4", "Nf3", "O-O", etc.). Always consider the current board position carefully. If you believe the game is over, state "resign", "draw", or "checkmate" as appropriate. Be strategic and play good chess moves.',
+                    b: 'You are playing chess as Black. You must respond with only valid chess moves in standard algebraic notation (like "e5", "Nc6", "O-O", etc.). Always consider the current board position carefully. If you believe the game is over, state "resign", "draw", or "checkmate" as appropriate. Be strategic and play good chess moves.'
+                },
+                checkers: {
+                    a: 'You are playing checkers as Red. Respond with moves in format "A1-B2" for regular moves or "A1xC3" for captures. Study the board position carefully before moving. Kings can move backward. You must capture when possible. If no legal moves exist, say "no moves".',
+                    b: 'You are playing checkers as Black. Respond with moves in format "A1-B2" for regular moves or "A1xC3" for captures. Study the board position carefully before moving. Kings can move backward. You must capture when possible. If no legal moves exist, say "no moves".'
+                },
+                othello: {
+                    a: 'You are playing Othello as Black. Respond with moves like "D3" or "E6". You must place a disc that flanks opponent discs. If no legal moves exist, respond with "pass". Study the board to find moves that flip the most opponent pieces.',
+                    b: 'You are playing Othello as White. Respond with moves like "D3" or "E6". You must place a disc that flanks opponent discs. If no legal moves exist, respond with "pass". Study the board to find moves that flip the most opponent pieces.'
+                },
+                story: {
+                    a: 'You are a creative writer collaborating on a story. Continue the narrative with 1-3 engaging sentences that advance the plot. Match the established tone and genre. Build on what came before while adding new elements, character development, or plot twists.',
+                    b: 'You are a creative writer collaborating on a story. Continue the narrative with 1-3 engaging sentences that advance the plot. Match the established tone and genre. Build on what came before while adding new elements, character development, or plot twists.'
+                }
+            };
+            
+            if (prompts[mode]) {
+                document.getElementById('systemPromptA').value = prompts[mode].a;
+                document.getElementById('systemPromptB').value = prompts[mode].b;
+            }
+        }
+
+        function initializeChessBoard() {
+            chessGame.board = initialChessBoard.map(row => [...row]);
+            chessGame.moves = [];
+            chessGame.currentFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+            chessGame.gameOver = false;
+            chessGame.winner = null;
+            chessGame.whiteToMove = true;
+            chessGame.castlingRights = { K: true, Q: true, k: true, q: true };
+            chessGame.enPassantTarget = null;
+            chessGame.lastMove = null;
+            
+            renderChessBoard();
+            document.getElementById('gameStatus').textContent = 'Ready to start - White to move';
+            document.getElementById('movesList').textContent = 'Game not started';
+            document.getElementById('currentFEN').textContent = chessGame.currentFEN;
+        }
+
+        function renderChessBoard() {
+            const boardElement = document.getElementById('chessBoard');
+            boardElement.innerHTML = '';
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.className = 'square ' + ((row + col) % 2 === 0 ? 'light' : 'dark');
+                    square.textContent = pieceSymbols[chessGame.board[row][col]];
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+                    
+                    if (chessGame.lastMove && 
+                        ((row === chessGame.lastMove.fromRow && col === chessGame.lastMove.fromCol) ||
+                         (row === chessGame.lastMove.toRow && col === chessGame.lastMove.toCol))) {
+                        square.classList.add('highlight');
+                    }
+                    
+                    boardElement.appendChild(square);
+                }
+            }
+        }
+		
+		function parseMove(moveStr, isWhite) {
+            // Clean the move string
+            moveStr = moveStr.replace(/[+#!?]/g, '').trim();
+            
+            // Handle castling
+            if (moveStr === 'O-O' || moveStr === '0-0') {
+                return parseCastling(true, isWhite);
+            }
+            if (moveStr === 'O-O-O' || moveStr === '0-0-0') {
+                return parseCastling(false, isWhite);
+            }
+            
+            // Parse regular moves
+            const movePattern = /^([NBRQK]?)([a-h]?)([1-8]?)x?([a-h][1-8])(?:=([NBRQ]))?$/;
+            const match = moveStr.match(movePattern);
+            
+            if (!match) {
+                console.warn('Could not parse move:', moveStr);
+                return null;
+            }
+            
+            const [, piece, fromFile, fromRank, toSquare, promotion] = match;
+            const toCol = toSquare.charCodeAt(0) - 'a'.charCodeAt(0);
+            const toRow = 8 - parseInt(toSquare[1]);
+            
+            // Determine the piece type
+            let pieceType = piece || 'P';
+            if (!isWhite) pieceType = pieceType.toLowerCase();
+            
+            // Find the source square
+            const fromPos = findPiecePosition(pieceType, fromFile, fromRank, toRow, toCol, isWhite);
+            
+            if (!fromPos) {
+                console.warn('Could not find piece for move:', moveStr);
+                return null;
+            }
+            
+            return {
+                fromRow: fromPos.row,
+                fromCol: fromPos.col,
+                toRow: toRow,
+                toCol: toCol,
+                piece: pieceType,
+                promotion: promotion,
+                moveStr: moveStr
+            };
+        }
+
+        function parseCastling(kingside, isWhite) {
+            const row = isWhite ? 7 : 0;
+            if (kingside) {
+                return {
+                    fromRow: row, fromCol: 4,
+                    toRow: row, toCol: 6,
+                    piece: isWhite ? 'K' : 'k',
+                    castling: 'kingside',
+                    moveStr: 'O-O'
+                };
+            } else {
+                return {
+                    fromRow: row, fromCol: 4,
+                    toRow: row, toCol: 2,
+                    piece: isWhite ? 'K' : 'k',
+                    castling: 'queenside',
+                    moveStr: 'O-O-O'
+                };
+            }
+        }
+
+        function findPiecePosition(pieceType, fromFile, fromRank, toRow, toCol, isWhite) {
+            let positions = [];
+            
+            // Search the board for the piece
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (chessGame.board[row][col] === pieceType) {
+                        // Check if this piece can legally move to the target square
+                        if (canPieceMoveTo(pieceType, row, col, toRow, toCol)) {
+                            positions.push({ row, col });
+                        }
+                    }
+                }
+            }
+            
+            // Filter by file/rank if specified
+            if (fromFile) {
+                const fileCol = fromFile.charCodeAt(0) - 'a'.charCodeAt(0);
+                positions = positions.filter(pos => pos.col === fileCol);
+            }
+            if (fromRank) {
+                const rankRow = 8 - parseInt(fromRank);
+                positions = positions.filter(pos => pos.row === rankRow);
+            }
+            
+            return positions.length === 1 ? positions[0] : positions[0]; // Return first if ambiguous
+        }
+
+        function canPieceMoveTo(pieceType, fromRow, fromCol, toRow, toCol) {
+            const piece = pieceType.toLowerCase();
+            const rowDiff = toRow - fromRow;
+            const colDiff = toCol - fromCol;
+            const absRowDiff = Math.abs(rowDiff);
+            const absColDiff = Math.abs(colDiff);
+            
+            switch (piece) {
+                case 'p': // Pawn
+                    const isWhite = pieceType === 'P';
+                    const direction = isWhite ? -1 : 1;
+                    const startRow = isWhite ? 6 : 1;
+                    
+                    // Forward move
+                    if (colDiff === 0 && chessGame.board[toRow][toCol] === ' ') {
+                        if (rowDiff === direction) return true;
+                        if (fromRow === startRow && rowDiff === 2 * direction) return true;
+                    }
+                    // Capture
+                    if (absColDiff === 1 && rowDiff === direction) {
+                        return chessGame.board[toRow][toCol] !== ' ';
+                    }
+                    return false;
+                    
+                case 'r': // Rook
+                    if (rowDiff === 0 || colDiff === 0) {
+                        return isPathClear(fromRow, fromCol, toRow, toCol);
+                    }
+                    return false;
+                    
+                case 'n': // Knight
+                    return (absRowDiff === 2 && absColDiff === 1) || (absRowDiff === 1 && absColDiff === 2);
+                    
+                case 'b': // Bishop
+                    if (absRowDiff === absColDiff) {
+                        return isPathClear(fromRow, fromCol, toRow, toCol);
+                    }
+                    return false;
+                    
+                case 'q': // Queen
+                    if (rowDiff === 0 || colDiff === 0 || absRowDiff === absColDiff) {
+                        return isPathClear(fromRow, fromCol, toRow, toCol);
+                    }
+                    return false;
+                    
+                case 'k': // King
+                    return absRowDiff <= 1 && absColDiff <= 1;
+                    
+                default:
+                    return false;
+            }
+        }
+
+        function isPathClear(fromRow, fromCol, toRow, toCol) {
+            const rowStep = toRow > fromRow ? 1 : toRow < fromRow ? -1 : 0;
+            const colStep = toCol > fromCol ? 1 : toCol < fromCol ? -1 : 0;
+            
+            let currentRow = fromRow + rowStep;
+            let currentCol = fromCol + colStep;
+            
+            while (currentRow !== toRow || currentCol !== toCol) {
+                if (chessGame.board[currentRow][currentCol] !== ' ') {
+                    return false;
+                }
+                currentRow += rowStep;
+                currentCol += colStep;
+            }
+            
+            return true;
+        }
+
+        function executeMove(move) {
+            if (!move) return false;
+            
+            // Handle castling
+            if (move.castling) {
+                const row = move.fromRow;
+                // Move king
+                chessGame.board[move.toRow][move.toCol] = chessGame.board[move.fromRow][move.fromCol];
+                chessGame.board[move.fromRow][move.fromCol] = ' ';
+                
+                // Move rook
+                if (move.castling === 'kingside') {
+                    chessGame.board[row][5] = chessGame.board[row][7];
+                    chessGame.board[row][7] = ' ';
+                } else {
+                    chessGame.board[row][3] = chessGame.board[row][0];
+                    chessGame.board[row][0] = ' ';
+                }
+            } else {
+                // Regular move
+                chessGame.board[move.toRow][move.toCol] = chessGame.board[move.fromRow][move.fromCol];
+                chessGame.board[move.fromRow][move.fromCol] = ' ';
+                
+                // Handle pawn promotion
+                if (move.promotion) {
+                    const isWhite = chessGame.whiteToMove;
+                    chessGame.board[move.toRow][move.toCol] = isWhite ? move.promotion : move.promotion.toLowerCase();
+                }
+            }
+            
+            // Store last move for highlighting
+            chessGame.lastMove = move;
+            chessGame.whiteToMove = !chessGame.whiteToMove;
+            
+            return true;
+		}
+
+        function initializeCheckers() {
+            checkersGame.board = Array(8).fill(null).map(() => Array(8).fill(null));
+            
+            // Place initial pieces - red on top (rows 0-2), black on bottom (rows 5-7)
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if ((row + col) % 2 === 1) { // Only on dark squares
+                        if (row < 3) {
+                            checkersGame.board[row][col] = { color: 'red', king: false };
+                        } else if (row > 4) {
+                            checkersGame.board[row][col] = { color: 'black', king: false };
+                        }
+                    }
+                }
+            }
+            
+            checkersGame.moves = [];
+            checkersGame.gameOver = false;
+            checkersGame.winner = null;
+            checkersGame.currentPlayer = 'red';
+            
+            renderCheckersBoard();
+            updateCheckersStats();
+            document.getElementById('checkersStatus').textContent = 'Ready to start - Red to move';
+        }
+
+        function renderCheckersBoard() {
+            const boardElement = document.getElementById('checkersBoard');
+            boardElement.innerHTML = '';
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.className = 'checkers-square ' + ((row + col) % 2 === 0 ? 'light' : 'dark');
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+                    
+                    const piece = checkersGame.board[row][col];
+                    if (piece) {
+                        const pieceElement = document.createElement('div');
+                        pieceElement.className = `checkers-piece ${piece.color}${piece.king ? ' king' : ''}`;
+                        square.appendChild(pieceElement);
+                    }
+                    
+                    boardElement.appendChild(square);
+                }
+            }
+        }
+
+        function updateCheckersStats() {
+            let redCount = 0, blackCount = 0;
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = checkersGame.board[row][col];
+                    if (piece) {
+                        if (piece.color === 'red') redCount++;
+                        else if (piece.color === 'black') blackCount++;
+                    }
+                }
+            }
+            
+            document.getElementById('redPieces').textContent = redCount;
+            document.getElementById('blackPieces').textContent = blackCount;
+        }
+
+        function initializeOthello() {
+            othelloGame.board = Array(8).fill(null).map(() => Array(8).fill(null));
+            
+            // Place initial pieces in center
+            othelloGame.board[3][3] = 'white';
+            othelloGame.board[3][4] = 'black';
+            othelloGame.board[4][3] = 'black';
+            othelloGame.board[4][4] = 'white';
+            
+            othelloGame.moves = [];
+            othelloGame.gameOver = false;
+            othelloGame.winner = null;
+            othelloGame.currentPlayer = 'black';
+            othelloGame.blackCount = 2;
+            othelloGame.whiteCount = 2;
+            
+            renderOthelloBoard();
+            updateOthelloStats();
+            document.getElementById('othelloStatus').textContent = 'Ready to start - Black to move';
+        }
+
+        function renderOthelloBoard() {
+            const boardElement = document.getElementById('othelloBoard');
+            boardElement.innerHTML = '';
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.className = 'othello-square';
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+                    
+                    const piece = othelloGame.board[row][col];
+                    if (piece) {
+                        const pieceElement = document.createElement('div');
+                        pieceElement.className = `othello-piece ${piece}`;
+                        square.appendChild(pieceElement);
+                    }
+                    
+                    boardElement.appendChild(square);
+                }
+            }
+            
+            highlightValidOthelloMoves();
+        }
+
+        function highlightValidOthelloMoves() {
+            const validMoves = getValidOthelloMoves(othelloGame.currentPlayer);
+            
+            document.querySelectorAll('.othello-square').forEach(square => {
+                square.classList.remove('possible-move');
+                const row = parseInt(square.dataset.row);
+                const col = parseInt(square.dataset.col);
+                
+                if (validMoves.some(move => move.row === row && move.col === col)) {
+                    square.classList.add('possible-move');
+                }
+            });
+        }
+
+        function getValidOthelloMoves(player) {
+            const validMoves = [];
+            const opponent = player === 'black' ? 'white' : 'black';
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (othelloGame.board[row][col] === null) {
+                        if (wouldFlipPieces(row, col, player, opponent).length > 0) {
+                            validMoves.push({ row, col });
+                        }
+                    }
+                }
+            }
+            
+            return validMoves;
+        }
+
+        function wouldFlipPieces(row, col, player, opponent) {
+            const directions = [[-1,-1], [-1,0], [-1,1], [0,-1], [0,1], [1,-1], [1,0], [1,1]];
+            const toFlip = [];
+            
+            for (const [dr, dc] of directions) {
+                const lineToFlip = [];
+                let r = row + dr;
+                let c = col + dc;
+                
+                while (r >= 0 && r < 8 && c >= 0 && c < 8 && othelloGame.board[r][c] === opponent) {
+                    lineToFlip.push([r, c]);
+                    r += dr;
+                    c += dc;
+                }
+                
+                if (r >= 0 && r < 8 && c >= 0 && c < 8 && othelloGame.board[r][c] === player && lineToFlip.length > 0) {
+                    toFlip.push(...lineToFlip);
+                }
+            }
+            
+            return toFlip;
+        }
+
+        function updateOthelloStats() {
+            let blackCount = 0, whiteCount = 0;
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = othelloGame.board[row][col];
+                    if (piece === 'black') blackCount++;
+                    else if (piece === 'white') whiteCount++;
+                }
+            }
+            
+            othelloGame.blackCount = blackCount;
+            othelloGame.whiteCount = whiteCount;
+            document.getElementById('blackDiscs').textContent = blackCount;
+            document.getElementById('whiteDiscs').textContent = whiteCount;
+        }
+
+        function initializeStory() {
+            storyGame.sentences = [];
+            storyGame.currentSentences = [];
+            storyGame.wordCount = 0;
+            storyGame.sentenceCount = 0;
+            storyGame.prompt = document.getElementById('storyPrompt').value || 'It was a dark and stormy night...';
+            storyGame.genre = document.getElementById('storyGenre').value;
+            
+            document.getElementById('storyText').innerHTML = '<div style="text-align: center; color: var(--text-secondary); font-style: italic; padding: 40px;">The story will appear here as the LLMs collaborate...</div>';
+            document.getElementById('storyStatus').textContent = 'Ready to begin story';
+            document.getElementById('wordCount').textContent = '0';
+            document.getElementById('sentenceCount').textContent = '0';
+            document.getElementById('storyProgress').textContent = 'Story not started';
+        }
+
+        function renderStory() {
+            const storyElement = document.getElementById('storyText');
+            storyElement.innerHTML = '';
+            
+            storyGame.sentences.forEach((sentence, index) => {
+                const sentenceDiv = document.createElement('div');
+                sentenceDiv.className = `story-sentence ${sentence.author}`;
+                if (index === storyGame.sentences.length - 1) {
+                    sentenceDiv.classList.add('new');
+                }
+                sentenceDiv.textContent = sentence.text;
+                storyElement.appendChild(sentenceDiv);
+            });
+            
+            storyElement.scrollTop = storyElement.scrollHeight;
+        }
+
+        function updateStoryStats() {
+            const allText = storyGame.sentences.map(s => s.text).join(' ');
+            const words = allText.trim() ? allText.trim().split(/\s+/).length : 0;
+            
+            document.getElementById('wordCount').textContent = words;
+            document.getElementById('sentenceCount').textContent = storyGame.sentences.length;
+            
+            const progress = storyGame.sentences.slice(-5).map((s, i) => `${storyGame.sentences.length - 4 + i}. [${s.author.toUpperCase()}] ${s.text.substring(0, 50)}...`).join('\n');
+            document.getElementById('storyProgress').textContent = progress || 'Story not started';
+        }
+
+        function updateDuration() {
+            if (!conversationData.startTime) return;
+            
+            const now = new Date();
+            const diff = Math.floor((now - conversationData.startTime) / 1000);
+            const minutes = Math.floor(diff / 60);
+            const seconds = diff % 60;
+            
+            document.getElementById('duration').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        async function startConversation() {
+            // Validate inputs
+            const requiredFields = ['endpointA', 'apiKeyA', 'modelA', 'endpointB', 'apiKeyB', 'modelB'];
+            if (currentMode === 'conversation') {
+                requiredFields.push('topic');
+            } else if (currentMode === 'story') {
+                requiredFields.push('storyPrompt');
+            }
+            
+            for (const field of requiredFields) {
+                const element = document.getElementById(field);
+                if (!element || !element.value.trim()) {
+                    alert(`Please fill in ${field}`);
+                    return;
+                }
+            }
+
+            // Initialize conversation data
+            conversationData = {
+                mode: currentMode,
+                topic: currentMode === 'conversation' ? document.getElementById('topic').value.trim() : 
+                       currentMode === 'story' ? document.getElementById('storyPrompt').value.trim() : 
+                       currentMode.charAt(0).toUpperCase() + currentMode.slice(1) + ' Game',
+                participants: [
+                    {
+                        id: 'llm_a',
+                        endpoint: document.getElementById('endpointA').value.trim(),
+                        model: document.getElementById('modelA').value.trim(),
+                        system_prompt: document.getElementById('systemPromptA').value.trim()
+                    },
+                    {
+                        id: 'llm_b',
+                        endpoint: document.getElementById('endpointB').value.trim(),
+                        model: document.getElementById('modelB').value.trim(),
+                        system_prompt: document.getElementById('systemPromptB').value.trim()
+                    }
+                ],
+                conversation: [],
+                startTime: new Date()
+            };
+
+            conversationHistory = [];
+            currentTurn = 'llm_a';
+            isRunning = true;
+
+            // Initialize game-specific data
+            if (currentMode === 'chess') {
+                conversationData.chess_game = {
+                    moves: [],
+                    final_position: null,
+                    winner: null
+                };
+            } else if (currentMode === 'checkers') {
+                conversationData.checkers_game = {
+                    moves: [],
+                    final_position: null,
+                    winner: null
+                };
+            } else if (currentMode === 'othello') {
+                conversationData.othello_game = {
+                    moves: [],
+                    final_position: null,
+                    winner: null
+                };
+            } else if (currentMode === 'story') {
+                conversationData.story_data = {
+                    prompt: storyGame.prompt,
+                    genre: storyGame.genre,
+                    sentences: []
+                };
+            }
+
+            // Update UI
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('exportBtn').disabled = false;
+            document.getElementById('stats').style.display = 'flex';
+            document.getElementById('conversation').innerHTML = '';
+
+            // Start duration timer
+            durationInterval = setInterval(updateDuration, 1000);
+
+            // Start the appropriate game/conversation
+            if (currentMode === 'chess') {
+                document.getElementById('gameStatus').textContent = 'Game in progress - White to move';
+                await sendChessMove(currentTurn);
+            } else if (currentMode === 'checkers') {
+                document.getElementById('checkersStatus').textContent = 'Game in progress - Red to move';
+                await sendCheckersMove(currentTurn);
+            } else if (currentMode === 'othello') {
+                document.getElementById('othelloStatus').textContent = 'Game in progress - Black to move';
+                await sendOthelloMove(currentTurn);
+            } else if (currentMode === 'story') {
+                document.getElementById('storyStatus').textContent = 'Story in progress';
+                await sendStoryContribution(currentTurn);
+            } else {
+                await sendMessage(currentTurn, conversationData.topic);
+            }
+        }
+
+        function stopConversation() {
+            isRunning = false;
+            conversationData.endTime = new Date();
+            
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('currentSpeaker').textContent = 'Stopped';
+            
+            clearInterval(durationInterval);
+            
+            addMessage('system', 'Game/Conversation stopped by user.');
+        }
+
+        async function sendChessMove(sender, retryContext = null) {
+            if (!isRunning || chessGame.gameOver) return;
+
+            const participant = conversationData.participants.find(p => p.id === sender);
+            if (!participant) return;
+
+            showLoading(sender);
+            document.getElementById('currentSpeaker').textContent = sender === 'llm_a' ? 'WHITE' : 'BLACK';
+
+            try {
+                const boardState = chessGame.board.map((row, rowIndex) => {
+                    return row.map((piece, colIndex) => {
+                        const file = String.fromCharCode('a'.charCodeAt(0) + colIndex);
+                        const rank = 8 - rowIndex;
+                        return piece === ' ' ? `${file}${rank}:empty` : `${file}${rank}:${piece}`;
+                    }).join(' ');
+                }).join('\n');
+
+                let contextMessage = `${participant.system_prompt}
+
+CURRENT GAME STATE:
+Move history: ${chessGame.moves.join(' ') || 'Game just started'}
+Current board position (FEN): ${chessGame.currentFEN}
+
+Board layout:
+${boardState}
+
+You are playing as ${sender === 'llm_a' ? 'White' : 'Black'}. It is your turn to move.`;
+
+                if (retryContext) {
+                    contextMessage += `
+
+IMPORTANT: Your previous move "${retryContext.invalidMove}" was INVALID.
+Reason: ${retryContext.reason}
+Please carefully examine the current board position and choose a different, legal move.
+
+Respond with ONLY your move in standard algebraic notation. Examples: "e4", "Nf3", "Bxf7+", "O-O", "Qd8#"`;
+                }
+
+                const messages = [
+                    { role: 'system', content: contextMessage }
+                ];
+
+                if (chessGame.moves.length > 0) {
+                    const lastMove = chessGame.moves[chessGame.moves.length - 1];
+                    let prompt = `The last move was: ${lastMove}. What is your next move?`;
+                    
+                    if (retryContext) {
+                        prompt = `Your previous move "${retryContext.invalidMove}" was invalid (${retryContext.reason}). The last valid move was: ${lastMove}. Please make a legal move now.`;
+                    }
+                    
+                    messages.push({ role: 'user', content: prompt });
+                } else {
+                    messages.push({ 
+                        role: 'user', 
+                        content: retryContext ? 
+                            `Your previous move "${retryContext.invalidMove}" was invalid (${retryContext.reason}). You are White - please make a legal opening move.` :
+                            'You are playing White. Please make your opening move.' 
+                    });
+                }
+
+                const response = await makeAPICall(participant, messages);
+                
+                if (!isRunning) return;
+
+                const move = response.trim().replace(/[.!?]/g, '');
+                hideLoading();
+
+                await processChessMove(sender, move);
+
+            } catch (error) {
+                hideLoading();
+                addMessage('system', `Error: ${error.message}`);
+                console.error('API Error:', error);
+            }
+        }
+
+		async function processChessMove(sender, move) {
+            // Simple validation - in a real app, you'd want proper chess engine validation
+            const gameOverMoves = ['resign', 'draw', 'checkmate'];
+            
+            if (gameOverMoves.includes(move.toLowerCase())) {
+                chessGame.gameOver = true;
+                chessGame.winner = move.toLowerCase() === 'resign' ? 
+                    (sender === 'llm_a' ? 'Black' : 'White') : 
+                    (move.toLowerCase() === 'checkmate' ? sender === 'llm_a' ? 'White' : 'Black' : 'Draw');
+                
+                addMessage(sender, `${move} - Game Over!`);
+                document.getElementById('gameStatus').textContent = `Game Over - ${chessGame.winner === 'Draw' ? 'Draw' : chessGame.winner + ' wins'}`;
+                
+                // Add to export data
+                conversationData.chess_game.winner = chessGame.winner;
+                conversationData.chess_game.final_position = chessGame.currentFEN;
+                conversationData.endTime = new Date();
+                
+                stopConversation();
+                return;
+            }
+
+            // Parse and execute the move
+            const isWhite = sender === 'llm_a';
+            const parsedMove = parseMove(move, isWhite);
+            
+            if (parsedMove && executeMove(parsedMove)) {
+                // Move was successful - update the board
+                renderChessBoard();
+                
+                // Add move to history
+                chessGame.moves.push(move);
+                addMessage(sender, `${move}`);
+
+                // Update UI
+                const moveNumber = Math.ceil(chessGame.moves.length / 2);
+                const formattedMoves = [];
+                for (let i = 0; i < chessGame.moves.length; i += 2) {
+                    const moveNum = Math.floor(i / 2) + 1;
+                    const whiteMove = chessGame.moves[i];
+                    const blackMove = chessGame.moves[i + 1] || '';
+                    formattedMoves.push(`${moveNum}. ${whiteMove}${blackMove ? ' ' + blackMove : ''}`);
+                }
+                document.getElementById('movesList').textContent = formattedMoves.join(' ');
+                document.getElementById('gameStatus').textContent = `Game in progress - ${chessGame.whiteToMove ? 'White' : 'Black'} to move`;
+
+                // Add to conversation history
+                const messageData = {
+                    speaker: sender,
+                    message: move,
+                    timestamp: new Date().toISOString(),
+                    move_number: moveNumber,
+                    parsed_move: parsedMove
+                };
+                conversationHistory.push(messageData);
+                conversationData.conversation.push(messageData);
+                conversationData.chess_game.moves = [...chessGame.moves];
+
+                // Update stats
+                document.getElementById('messageCount').textContent = chessGame.moves.length;
+
+                // Switch turns only after successful move
+                currentTurn = currentTurn === 'llm_a' ? 'llm_b' : 'llm_a';
+
+                // Continue game after a short delay
+                setTimeout(() => {
+                    if (isRunning && !chessGame.gameOver) {
+                        sendChessMove(currentTurn);
+                    }
+                }, 1500);
+            } else {
+                // Invalid move - provide detailed feedback and ask the SAME player to try again
+                addMessage('system', `Invalid move "${move}" by ${sender.toUpperCase()}. Asking for a new move...`);
+                
+                // Determine why the move might be invalid for better feedback
+                let reason = "Could not parse move or move is illegal";
+                if (!parseMove(move, sender === 'llm_a')) {
+                    if (!move.match(/^[a-h1-8NBRQKO\-=+#x]*$/)) {
+                        reason = "Invalid characters in move notation";
+                    } else if (move.length > 10) {
+                        reason = "Move notation too long - use standard format like 'e4' or 'Nf3'";
+                    } else {
+                        reason = "Could not understand move format - use algebraic notation";
+                    }
+                } else {
+                    reason = "Move is illegal in current position";
+                }
+                
+                // Try again with the same player, providing context about the invalid move
+                setTimeout(() => {
+                    if (isRunning && !chessGame.gameOver) {
+                        sendChessMove(sender, {
+                            invalidMove: move,
+                            reason: reason
+                        });
+                    }
+                }, 1500);
+            }
+        }
+
+        async function sendCheckersMove(sender) {
+            if (!isRunning || checkersGame.gameOver) return;
+
+            const participant = conversationData.participants.find(p => p.id === sender);
+            if (!participant) return;
+
+            showLoading(sender);
+            document.getElementById('currentSpeaker').textContent = sender === 'llm_a' ? 'RED' : 'BLACK';
+
+            try {
+                const boardState = generateCheckersBoardState();
+                
+                let contextMessage = `${participant.system_prompt}
+
+CURRENT BOARD STATE:
+${boardState}
+
+Move history: ${checkersGame.moves.join(' ') || 'Game just started'}
+
+You are playing as ${sender === 'llm_a' ? 'Red' : 'Black'}. It is your turn to move.
+Respond with moves in format "A1-B2" for regular moves or "A1xC3" for captures.`;
+
+                const messages = [
+                    { role: 'system', content: contextMessage },
+                    { role: 'user', content: 'What is your move?' }
+                ];
+
+                const response = await makeAPICall(participant, messages);
+                
+                if (!isRunning) return;
+
+                const move = response.trim().replace(/[.!?]/g, '');
+                hideLoading();
+
+                if (executeCheckersMove(move, checkersGame.currentPlayer)) {
+                    checkersGame.moves.push(move);
+                    addMessage(sender, move);
+                    
+                    renderCheckersBoard();
+                    updateCheckersStats();
+                    document.getElementById('checkersHistory').textContent = checkersGame.moves.join(' ');
+                    
+                    const messageData = {
+                        speaker: sender,
+                        message: move,
+                        timestamp: new Date().toISOString()
+                    };
+                    conversationHistory.push(messageData);
+                    conversationData.conversation.push(messageData);
+                    
+                    checkersGame.currentPlayer = checkersGame.currentPlayer === 'red' ? 'black' : 'red';
+                    currentTurn = currentTurn === 'llm_a' ? 'llm_b' : 'llm_a';
+                    
+                    document.getElementById('messageCount').textContent = checkersGame.moves.length;
+                    
+                    setTimeout(() => {
+                        if (isRunning && !checkersGame.gameOver) {
+                            sendCheckersMove(currentTurn);
+                        }
+                    }, 1500);
+                } else {
+                    addMessage('system', `Invalid checkers move: ${move}`);
+                    setTimeout(() => sendCheckersMove(sender), 1000);
+                }
+
+            } catch (error) {
+                hideLoading();
+                addMessage('system', `Error: ${error.message}`);
+                console.error('API Error:', error);
+            }
+        }
+
+        function generateCheckersBoardState() {
+            const files = 'ABCDEFGH';
+            let state = 'Current board position:\n';
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = checkersGame.board[row][col];
+                    if (piece && (row + col) % 2 === 1) {
+                        const square = files[col] + (8 - row);
+                        const pieceDesc = `${piece.color}${piece.king ? '_king' : ''}`;
+                        state += `${square}: ${pieceDesc}\n`;
+                    }
+                }
+            }
+            
+            return state;
+        }
+
+		function executeCheckersMove(moveStr, currentPlayer) {
+            const files = 'ABCDEFGH';
+            const isCapture = moveStr.includes('x');
+            const parts = moveStr.split(isCapture ? 'x' : '-');
+            
+            if (parts.length !== 2) return false;
+            
+            const fromSquare = parts[0].trim().toUpperCase();
+            const toSquare = parts[1].trim().toUpperCase();
+            
+            // Validate square format (should be like A1, B2, etc.)
+            if (fromSquare.length !== 2 || toSquare.length !== 2) return false;
+            
+            const fromCol = files.indexOf(fromSquare[0]);
+            const fromRow = 8 - parseInt(fromSquare[1]);
+            const toCol = files.indexOf(toSquare[0]);
+            const toRow = 8 - parseInt(toSquare[1]);
+            
+            // Validate coordinates are within board bounds
+            if (fromCol === -1 || toCol === -1 || 
+                fromRow < 0 || fromRow > 7 || 
+                toRow < 0 || toRow > 7 ||
+                isNaN(fromRow) || isNaN(toRow)) {
+                console.log(`Invalid coordinates: fromRow=${fromRow}, fromCol=${fromCol}, toRow=${toRow}, toCol=${toCol}`);
+                return false;
+            }
+            
+            const piece = checkersGame.board[fromRow][fromCol];
+            if (!piece || piece.color !== currentPlayer) {
+                console.log(`No valid piece at ${fromSquare} for ${currentPlayer}`);
+                return false;
+            }
+            
+            // Validate that destination is empty
+            if (checkersGame.board[toRow][toCol] !== null) {
+                console.log(`Destination ${toSquare} is not empty`);
+                return false;
+            }
+            
+            // For captures, validate there's a piece to capture and the move is diagonal by 2
+            if (isCapture) {
+                const rowDiff = Math.abs(toRow - fromRow);
+                const colDiff = Math.abs(toCol - fromCol);
+                
+                // Capture moves should be exactly 2 squares diagonally
+                if (rowDiff !== 2 || colDiff !== 2) {
+                    console.log(`Invalid capture distance: rowDiff=${rowDiff}, colDiff=${colDiff}`);
+                    return false;
+                }
+                
+                const midRow = Math.floor((fromRow + toRow) / 2);
+                const midCol = Math.floor((fromCol + toCol) / 2);
+                const capturedPiece = checkersGame.board[midRow][midCol];
+                
+                // Must have an opponent piece to capture
+                if (!capturedPiece || capturedPiece.color === currentPlayer) {
+                    console.log(`No valid piece to capture at ${files[midCol]}${8-midRow}`);
+                    return false;
+                }
+                
+                // Remove captured piece
+                checkersGame.board[midRow][midCol] = null;
+                console.log(`Captured piece at ${files[midCol]}${8-midRow}`);
+            } else {
+                // Regular moves should be exactly 1 square diagonally
+                const rowDiff = Math.abs(toRow - fromRow);
+                const colDiff = Math.abs(toCol - fromCol);
+                
+                if (rowDiff !== 1 || colDiff !== 1) {
+                    console.log(`Invalid regular move distance: rowDiff=${rowDiff}, colDiff=${colDiff}`);
+                    return false;
+                }
+                
+                // Regular pieces can only move forward (unless king)
+                if (!piece.king) {
+                    const correctDirection = (piece.color === 'red' && toRow > fromRow) || 
+                                           (piece.color === 'black' && toRow < fromRow);
+                    if (!correctDirection) {
+                        console.log(`Piece cannot move backward (not a king)`);
+                        return false;
+                    }
+                }
+            }
+            
+            // Execute move
+            checkersGame.board[toRow][toCol] = piece;
+            checkersGame.board[fromRow][fromCol] = null;
+            
+            // Check for king promotion
+            if ((piece.color === 'red' && toRow === 7) || (piece.color === 'black' && toRow === 0)) {
+                piece.king = true;
+                console.log(`${piece.color} piece promoted to king at ${toSquare}`);
+            }
+            
+            console.log(`Successfully executed move: ${moveStr}`);
+            return true;
+        }
+
+        async function sendOthelloMove(sender) {
+            if (!isRunning || othelloGame.gameOver) return;
+
+            const participant = conversationData.participants.find(p => p.id === sender);
+            if (!participant) return;
+
+            showLoading(sender);
+            document.getElementById('currentSpeaker').textContent = sender === 'llm_a' ? 'BLACK' : 'WHITE';
+
+            try {
+                const boardState = generateOthelloBoardState();
+                const validMoves = getValidOthelloMoves(othelloGame.currentPlayer);
+                
+                let contextMessage = `${participant.system_prompt}
+
+CURRENT BOARD STATE:
+${boardState}
+
+Valid moves: ${validMoves.length > 0 ? validMoves.map(m => String.fromCharCode('A'.charCodeAt(0) + m.col) + (m.row + 1)).join(', ') : 'No valid moves - must pass'}
+
+Move history: ${othelloGame.moves.join(' ') || 'Game just started'}
+
+You are playing as ${sender === 'llm_a' ? 'Black' : 'White'}. It is your turn to move.`;
+
+                const messages = [
+                    { role: 'system', content: contextMessage },
+                    { role: 'user', content: 'What is your move?' }
+                ];
+
+                const response = await makeAPICall(participant, messages);
+                
+                if (!isRunning) return;
+
+                const move = response.trim().replace(/[.!?]/g, '');
+                hideLoading();
+
+                if (executeOthelloMove(move)) {
+                    othelloGame.moves.push(move);
+                    addMessage(sender, move);
+                    
+                    renderOthelloBoard();
+                    updateOthelloStats();
+                    document.getElementById('othelloHistory').textContent = othelloGame.moves.join(' ');
+                    
+                    const messageData = {
+                        speaker: sender,
+                        message: move,
+                        timestamp: new Date().toISOString()
+                    };
+                    conversationHistory.push(messageData);
+                    conversationData.conversation.push(messageData);
+                    
+                    othelloGame.currentPlayer = othelloGame.currentPlayer === 'black' ? 'white' : 'black';
+                    currentTurn = currentTurn === 'llm_a' ? 'llm_b' : 'llm_a';
+                    
+                    document.getElementById('messageCount').textContent = othelloGame.moves.length;
+                    
+                    // Check for game end
+                    const nextValidMoves = getValidOthelloMoves(othelloGame.currentPlayer);
+                    const opponentMoves = getValidOthelloMoves(othelloGame.currentPlayer === 'black' ? 'white' : 'black');
+                    
+                    if (nextValidMoves.length === 0 && opponentMoves.length === 0) {
+                        othelloGame.gameOver = true;
+                        othelloGame.winner = othelloGame.blackCount > othelloGame.whiteCount ? 'Black' : 
+                                            othelloGame.whiteCount > othelloGame.blackCount ? 'White' : 'Tie';
+                        document.getElementById('othelloStatus').textContent = `Game Over - ${othelloGame.winner === 'Tie' ? 'Tie' : othelloGame.winner + ' wins'}`;
+                        stopConversation();
+                        return;
+                    }
+                    
+                    setTimeout(() => {
+                        if (isRunning && !othelloGame.gameOver) {
+                            sendOthelloMove(currentTurn);
+                        }
+                    }, 1500);
+                } else {
+                    addMessage('system', `Invalid othello move: ${move}`);
+                    setTimeout(() => sendOthelloMove(sender), 1000);
+                }
+
+            } catch (error) {
+                hideLoading();
+                addMessage('system', `Error: ${error.message}`);
+                console.error('API Error:', error);
+            }
+        }
+
+        function generateOthelloBoardState() {
+            const files = 'ABCDEFGH';
+            let state = 'Current board position:\n';
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = othelloGame.board[row][col];
+                    if (piece) {
+                        const square = files[col] + (row + 1);
+                        state += `${square}: ${piece}\n`;
+                    }
+                }
+            }
+            
+            return state;
+        }
+
+        function executeOthelloMove(moveStr) {
+            if (moveStr.toLowerCase() === 'pass') return true;
+            
+            const files = 'ABCDEFGH';
+            const col = files.indexOf(moveStr[0]);
+            const row = parseInt(moveStr[1]) - 1;
+            
+            if (col === -1 || row < 0 || row > 7) return false;
+            
+            const toFlip = wouldFlipPieces(row, col, othelloGame.currentPlayer, 
+                                         othelloGame.currentPlayer === 'black' ? 'white' : 'black');
+            
+            if (toFlip.length === 0 && othelloGame.board[row][col] !== null) return false;
+            
+            othelloGame.board[row][col] = othelloGame.currentPlayer;
+            
+            // Flip pieces with animation
+            toFlip.forEach(([r, c]) => {
+                othelloGame.board[r][c] = othelloGame.currentPlayer;
+            });
+            
+            return true;
+        }
+
+        async function sendStoryContribution(sender) {
+            if (!isRunning) return;
+
+            const participant = conversationData.participants.find(p => p.id === sender);
+            if (!participant) return;
+
+            showLoading(sender);
+            document.getElementById('currentSpeaker').textContent = sender.toUpperCase();
+
+            try {
+                const recentContext = storyGame.sentences.slice(-5).map(s => s.text).join(' ');
+                const sentenceLimit = parseInt(document.getElementById('sentenceLimit').value) || 3;
+                const genre = document.getElementById('storyGenre').value;
+                
+                let contextMessage = `${participant.system_prompt}
+
+STORY CONTEXT:
+Genre: ${genre.charAt(0).toUpperCase() + genre.slice(1)}
+Initial prompt: ${storyGame.prompt}
+
+${storyGame.sentences.length > 0 ? 'Recent story text:\n' + recentContext : 'This is the beginning of the story.'}
+
+Please continue with ${sentenceLimit} ${sentenceLimit === 1 ? 'sentence' : 'sentences'} that advance the ${genre} story.`;
+
+                const messages = [
+                    { role: 'system', content: contextMessage },
+                    { 
+                        role: 'user', 
+                        content: storyGame.sentences.length === 0 ? 
+                            `Begin the story with the prompt: "${storyGame.prompt}"` :
+                            'Continue the story from where it left off.'
+                    }
+                ];
+
+                const response = await makeAPICall(participant, messages);
+                
+                if (!isRunning) return;
+
+                hideLoading();
+                
+                if (response && response.trim()) {
+                    // Split contribution into sentences
+                    const sentences = response.split(/[.!?]+/).filter(s => s.trim());
+                    
+                    sentences.forEach(sentence => {
+                        if (sentence.trim()) {
+                            const cleanSentence = sentence.trim();
+                            const fullSentence = cleanSentence.endsWith('.') || cleanSentence.endsWith('!') || cleanSentence.endsWith('?') ? 
+                                                cleanSentence : cleanSentence + '.';
+                            
+                            storyGame.sentences.push({
+                                text: fullSentence,
+                                author: sender,
+                                timestamp: new Date()
+                            });
+                        }
+                    });
+                    
+                    addMessage(sender, response);
+                    renderStory();
+                    updateStoryStats();
+                    
+                    const messageData = {
+                        speaker: sender,
+                        message: response,
+                        timestamp: new Date().toISOString()
+                    };
+                    conversationHistory.push(messageData);
+                    conversationData.conversation.push(messageData);
+                    
+                    if (conversationData.story_data) {
+                        conversationData.story_data.sentences = [...storyGame.sentences];
+                    }
+                    
+                    document.getElementById('messageCount').textContent = conversationHistory.length;
+                    
+                    currentTurn = currentTurn === 'llm_a' ? 'llm_b' : 'llm_a';
+                    
+                    setTimeout(() => {
+                        if (isRunning) {
+                            sendStoryContribution(currentTurn);
+                        }
+                    }, 2000);
+                }
+                
+            } catch (error) {
+                hideLoading();
+                addMessage('system', `Error: ${error.message}`);
+                console.error('API Error:', error);
+            }
+        }
+
+        async function sendMessage(sender, content) {
+            if (!isRunning) return;
+
+            const participant = conversationData.participants.find(p => p.id === sender);
+            if (!participant) return;
+
+            showLoading(sender);
+            document.getElementById('currentSpeaker').textContent = sender.toUpperCase();
+
+            try {
+                const messages = [
+                    { role: 'system', content: participant.system_prompt }
+                ];
+
+                if (conversationHistory.length === 0) {
+                    messages.push({ role: 'user', content: `Please start a discussion about: ${content}` });
+                } else {
+                    const recentMessages = conversationHistory.slice(-6);
+                    for (const msg of recentMessages) {
+                        const role = msg.speaker === sender ? 'assistant' : 'user';
+                        messages.push({ role, content: msg.message });
+                    }
+                }
+
+                const response = await makeAPICall(participant, messages);
+                
+                if (!isRunning) return;
+
+                hideLoading();
+                addMessage(sender, response);
+
+                const messageData = {
+                    speaker: sender,
+                    message: response,
+                    timestamp: new Date().toISOString()
+                };
+                conversationHistory.push(messageData);
+                conversationData.conversation.push(messageData);
+
+                document.getElementById('messageCount').textContent = conversationHistory.length;
+
+                currentTurn = currentTurn === 'llm_a' ? 'llm_b' : 'llm_a';
+
+                setTimeout(() => {
+                    if (isRunning) {
+                        sendMessage(currentTurn, response);
+                    }
+                }, 1000);
+
+            } catch (error) {
+                hideLoading();
+                addMessage('system', `Error: ${error.message}`);
+                console.error('API Error:', error);
+            }
+        }
+
+        async function makeAPICall(participant, messages) {
+            const apiKey = participant.id === 'llm_a' ? 
+                document.getElementById('apiKeyA').value : 
+                document.getElementById('apiKeyB').value;
+
+            const response = await fetch(participant.endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: participant.model,
+                    messages: messages,
+                    max_tokens: 2000,
+                    temperature: 0.7
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(`API Error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+            }
+
+            const data = await response.json();
+            
+            if (data.choices && data.choices[0] && data.choices[0].message) {
+                return data.choices[0].message.content;
+            } else if (data.content) {
+                return data.content;
+            } else {
+                throw new Error('Unexpected API response format');
+            }
+        }
+
+        function showLoading(sender) {
+            const conversation = document.getElementById('conversation');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = `message message-${sender}`;
+            loadingDiv.id = 'loading-message';
+            loadingDiv.innerHTML = `
+                <div class="message-header">${sender.toUpperCase()}</div>
+                <div class="message-content">
+                    <span class="loading"></span>Thinking...
+                </div>
+            `;
+            conversation.appendChild(loadingDiv);
+            conversation.scrollTop = conversation.scrollHeight;
+        }
+
+        function hideLoading() {
+            const loadingMessage = document.getElementById('loading-message');
+            if (loadingMessage) {
+                loadingMessage.remove();
+            }
+        }
+
+        function addMessage(sender, content) {
+            const conversation = document.getElementById('conversation');
+            const messageDiv = document.createElement('div');
+            
+            if (sender === 'system') {
+                messageDiv.className = 'status';
+                messageDiv.textContent = content;
+            } else {
+                messageDiv.className = `message message-${sender}`;
+                messageDiv.innerHTML = `
+                    <div class="message-header">${sender.toUpperCase()}</div>
+                    <div class="message-content">${content}</div>
+                `;
+            }
+            
+            conversation.appendChild(messageDiv);
+            conversation.scrollTop = conversation.scrollHeight;
+        }
+
+        function exportConversation() {
+            if (conversationData.conversation.length === 0) {
+                alert('No conversation to export!');
+                return;
+            }
+
+            const exportData = {
+                ...conversationData,
+                metadata: {
+                    exported_at: new Date().toISOString(),
+                    total_messages: conversationData.conversation.length,
+                    duration_seconds: conversationData.endTime ? 
+                        Math.floor((conversationData.endTime - conversationData.startTime) / 1000) : 
+                        Math.floor((new Date() - conversationData.startTime) / 1000),
+                    final_game_state: currentMode === 'chess' ? chessGame : 
+                                     currentMode === 'checkers' ? checkersGame :
+                                     currentMode === 'othello' ? othelloGame :
+                                     currentMode === 'story' ? storyGame : null
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dual-llm-${currentMode}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize with conversation mode
+        setMode('conversation');
+    </script>
+</body>
+</html> 
