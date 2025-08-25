@@ -211,7 +211,7 @@
 
         .game-container {
             display: grid;
-            grid-template-columns: 1fr 350px;
+            grid-template-columns: 1fr 400px;
             gap: 30px;
             margin-bottom: 30px;
         }
@@ -232,7 +232,8 @@
             grid-template-columns: repeat(8, 1fr);
             gap: 1px;
             aspect-ratio: 1;
-            max-width: 400px;
+            width: 400px;
+            height: 400px;
             margin: 0 auto;
             border: 2px solid #8b4513;
         }
@@ -258,74 +259,6 @@
         .square.highlight {
             background-color: #ffff99 !important;
             box-shadow: inset 0 0 10px rgba(255, 255, 0, 0.5);
-        }
-
-        /* Checkers Board Styles */
-        .checkers-board {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 2px;
-            width: 400px;
-            height: 400px;
-            border: 3px solid #8b4513;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .checkers-square {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .checkers-square.light {
-            background-color: #f0d9b5;
-        }
-
-        .checkers-square.dark {
-            background-color: #b58863;
-        }
-
-        .checkers-square.highlight {
-            background-color: #ffff99 !important;
-            box-shadow: inset 0 0 15px rgba(255, 255, 0, 0.8);
-        }
-
-        .checkers-piece {
-            width: 80%;
-            height: 80%;
-            border-radius: 50%;
-            border: 3px solid #2c3e50;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .checkers-piece.red {
-            background: radial-gradient(circle at 30% 30%, #ef4444, #dc2626);
-            color: white;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }
-
-        .checkers-piece.black {
-            background: radial-gradient(circle at 30% 30%, #4b5563, #374151);
-            color: white;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }
-
-        .checkers-piece.king::after {
-            content: '♔';
-            position: absolute;
-            font-size: 0.8em;
-            color: gold;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         }
 
         /* Othello Board Styles */
@@ -787,10 +720,10 @@
 
         <div class="mode-selector">
             <button class="mode-btn active" onclick="setMode('conversation')" id="conversationMode">💬 Conversation</button>
-            <button class="mode-btn" onclick="setMode('chess')" id="chessMode">♟️ Chess</button>
-            <button class="mode-btn" onclick="setMode('checkers')" id="checkersMode">🔴 Checkers</button>
-            <button class="mode-btn" onclick="setMode('othello')" id="othelloMode">⚫ Othello</button>
             <button class="mode-btn" onclick="setMode('story')" id="storyMode">📖 Story</button>
+            <button class="mode-btn" onclick="setMode('chess')" id="chessMode">♟️ Chess</button>
+            <button class="mode-btn" onclick="setMode('othello')" id="othelloMode">⚫ Othello</button>
+
         </div>
 
         <!-- Conversation Mode -->
@@ -846,34 +779,6 @@
                 <div class="form-group">
                     <label>Current Position (FEN)</label>
                     <div class="current-position" id="currentFEN">rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Checkers Game Container -->
-        <div class="game-container" id="checkersContainer" style="display: none;">
-            <div class="game-board">
-                <h3 style="margin-bottom: 20px; color: var(--text-primary);">Checkers Board</h3>
-                <div class="checkers-board" id="checkersBoard"></div>
-            </div>
-			<div class="game-info">
-				<div class="game-status" id="checkersStatus">Ready to start</div>
-				<div class="game-stats">
-					<div class="stat-item">
-                        <div class="stat-value" style="color: var(--checkers-red);" id="redPieces">12</div>
-                        <div class="stat-label">Red Pieces</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" style="color: var(--checkers-black);" id="blackPieces">12</div>
-                        <div class="stat-label">Black Pieces</div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Move History</label>
-                    <div class="moves-list" id="checkersHistory">Game not started</div>
-                </div>
-                <div style="font-size: 0.85rem; color: var(--text-secondary); text-align: center; margin-top: 10px;">
-                    Format: A1-B2 or A1xC3 (capture)
                 </div>
             </div>
         </div>
@@ -990,14 +895,6 @@
             lastMove: null
         };
 
-        let checkersGame = {
-            board: null,
-            moves: [],
-            gameOver: false,
-            winner: null,
-            currentPlayer: 'red'
-        };
-
         let othelloGame = {
             board: null,
             moves: [],
@@ -1058,7 +955,6 @@
             document.getElementById('conversationSection').style.display = mode === 'conversation' ? 'block' : 'none';
             document.getElementById('storySection').style.display = mode === 'story' ? 'block' : 'none';
             document.getElementById('chessContainer').style.display = mode === 'chess' ? 'grid' : 'none';
-            document.getElementById('checkersContainer').style.display = mode === 'checkers' ? 'grid' : 'none';
             document.getElementById('othelloContainer').style.display = mode === 'othello' ? 'grid' : 'none';
             document.getElementById('storyContainer').style.display = mode === 'story' ? 'block' : 'none';
             
@@ -1068,8 +964,6 @@
             // Initialize the selected game
             if (mode === 'chess') {
                 initializeChessBoard();
-            } else if (mode === 'checkers') {
-                initializeCheckers();
             } else if (mode === 'othello') {
                 initializeOthello();
             } else if (mode === 'story') {
@@ -1086,10 +980,6 @@
                 chess: {
                     a: 'You are playing chess as White. You must respond with only valid chess moves in standard algebraic notation (like "e4", "Nf3", "O-O", etc.). Always consider the current board position carefully. If you believe the game is over, state "resign", "draw", or "checkmate" as appropriate. Be strategic and play good chess moves.',
                     b: 'You are playing chess as Black. You must respond with only valid chess moves in standard algebraic notation (like "e5", "Nc6", "O-O", etc.). Always consider the current board position carefully. If you believe the game is over, state "resign", "draw", or "checkmate" as appropriate. Be strategic and play good chess moves.'
-                },
-                checkers: {
-                    a: 'You are playing checkers as Red. Respond with moves in format "A1-B2" for regular moves or "A1xC3" for captures. Study the board position carefully before moving. Kings can move backward. You must capture when possible. If no legal moves exist, say "no moves".',
-                    b: 'You are playing checkers as Black. Respond with moves in format "A1-B2" for regular moves or "A1xC3" for captures. Study the board position carefully before moving. Kings can move backward. You must capture when possible. If no legal moves exist, say "no moves".'
                 },
                 othello: {
                     a: 'You are playing Othello as Black. Respond with moves like "D3" or "E6". You must place a disc that flanks opponent discs. If no legal moves exist, respond with "pass". Study the board to find moves that flip the most opponent pieces.',
@@ -1352,72 +1242,6 @@
             return true;
 		}
 
-        function initializeCheckers() {
-            checkersGame.board = Array(8).fill(null).map(() => Array(8).fill(null));
-            
-            // Place initial pieces - red on top (rows 0-2), black on bottom (rows 5-7)
-            for (let row = 0; row < 8; row++) {
-                for (let col = 0; col < 8; col++) {
-                    if ((row + col) % 2 === 1) { // Only on dark squares
-                        if (row < 3) {
-                            checkersGame.board[row][col] = { color: 'red', king: false };
-                        } else if (row > 4) {
-                            checkersGame.board[row][col] = { color: 'black', king: false };
-                        }
-                    }
-                }
-            }
-            
-            checkersGame.moves = [];
-            checkersGame.gameOver = false;
-            checkersGame.winner = null;
-            checkersGame.currentPlayer = 'red';
-            
-            renderCheckersBoard();
-            updateCheckersStats();
-            document.getElementById('checkersStatus').textContent = 'Ready to start - Red to move';
-        }
-
-        function renderCheckersBoard() {
-            const boardElement = document.getElementById('checkersBoard');
-            boardElement.innerHTML = '';
-            
-            for (let row = 0; row < 8; row++) {
-                for (let col = 0; col < 8; col++) {
-                    const square = document.createElement('div');
-                    square.className = 'checkers-square ' + ((row + col) % 2 === 0 ? 'light' : 'dark');
-                    square.dataset.row = row;
-                    square.dataset.col = col;
-                    
-                    const piece = checkersGame.board[row][col];
-                    if (piece) {
-                        const pieceElement = document.createElement('div');
-                        pieceElement.className = `checkers-piece ${piece.color}${piece.king ? ' king' : ''}`;
-                        square.appendChild(pieceElement);
-                    }
-                    
-                    boardElement.appendChild(square);
-                }
-            }
-        }
-
-        function updateCheckersStats() {
-            let redCount = 0, blackCount = 0;
-            
-            for (let row = 0; row < 8; row++) {
-                for (let col = 0; col < 8; col++) {
-                    const piece = checkersGame.board[row][col];
-                    if (piece) {
-                        if (piece.color === 'red') redCount++;
-                        else if (piece.color === 'black') blackCount++;
-                    }
-                }
-            }
-            
-            document.getElementById('redPieces').textContent = redCount;
-            document.getElementById('blackPieces').textContent = blackCount;
-        }
-
         function initializeOthello() {
             othelloGame.board = Array(8).fill(null).map(() => Array(8).fill(null));
             
@@ -1540,7 +1364,7 @@
             storyGame.currentSentences = [];
             storyGame.wordCount = 0;
             storyGame.sentenceCount = 0;
-            storyGame.prompt = document.getElementById('storyPrompt').value || 'It was a dark and stormy night...';
+            storyGame.prompt = document.getElementById('storyPrompt').value;
             storyGame.genre = document.getElementById('storyGenre').value;
             
             document.getElementById('storyText').innerHTML = '<div style="text-align: center; color: var(--text-secondary); font-style: italic; padding: 40px;">The story will appear here as the LLMs collaborate...</div>';
@@ -1880,194 +1704,6 @@ Respond with ONLY your move in standard algebraic notation. Examples: "e4", "Nf3
             }
         }
 
-        async function sendCheckersMove(sender) {
-            if (!isRunning || checkersGame.gameOver) return;
-
-            const participant = conversationData.participants.find(p => p.id === sender);
-            if (!participant) return;
-
-            showLoading(sender);
-            document.getElementById('currentSpeaker').textContent = sender === 'llm_a' ? 'RED' : 'BLACK';
-
-            try {
-                const boardState = generateCheckersBoardState();
-                
-                let contextMessage = `${participant.system_prompt}
-
-CURRENT BOARD STATE:
-${boardState}
-
-Move history: ${checkersGame.moves.join(' ') || 'Game just started'}
-
-You are playing as ${sender === 'llm_a' ? 'Red' : 'Black'}. It is your turn to move.
-Respond with moves in format "A1-B2" for regular moves or "A1xC3" for captures.`;
-
-                const messages = [
-                    { role: 'system', content: contextMessage },
-                    { role: 'user', content: 'What is your move?' }
-                ];
-
-                const response = await makeAPICall(participant, messages);
-                
-                if (!isRunning) return;
-
-                const move = response.trim().replace(/[.!?]/g, '');
-                hideLoading();
-
-                if (executeCheckersMove(move, checkersGame.currentPlayer)) {
-                    checkersGame.moves.push(move);
-                    addMessage(sender, move);
-                    
-                    renderCheckersBoard();
-                    updateCheckersStats();
-                    document.getElementById('checkersHistory').textContent = checkersGame.moves.join(' ');
-                    
-                    const messageData = {
-                        speaker: sender,
-                        message: move,
-                        timestamp: new Date().toISOString()
-                    };
-                    conversationHistory.push(messageData);
-                    conversationData.conversation.push(messageData);
-                    
-                    checkersGame.currentPlayer = checkersGame.currentPlayer === 'red' ? 'black' : 'red';
-                    currentTurn = currentTurn === 'llm_a' ? 'llm_b' : 'llm_a';
-                    
-                    document.getElementById('messageCount').textContent = checkersGame.moves.length;
-                    
-                    setTimeout(() => {
-                        if (isRunning && !checkersGame.gameOver) {
-                            sendCheckersMove(currentTurn);
-                        }
-                    }, 1500);
-                } else {
-                    addMessage('system', `Invalid checkers move: ${move}`);
-                    setTimeout(() => sendCheckersMove(sender), 1000);
-                }
-
-            } catch (error) {
-                hideLoading();
-                addMessage('system', `Error: ${error.message}`);
-                console.error('API Error:', error);
-            }
-        }
-
-        function generateCheckersBoardState() {
-            const files = 'ABCDEFGH';
-            let state = 'Current board position:\n';
-            
-            for (let row = 0; row < 8; row++) {
-                for (let col = 0; col < 8; col++) {
-                    const piece = checkersGame.board[row][col];
-                    if (piece && (row + col) % 2 === 1) {
-                        const square = files[col] + (8 - row);
-                        const pieceDesc = `${piece.color}${piece.king ? '_king' : ''}`;
-                        state += `${square}: ${pieceDesc}\n`;
-                    }
-                }
-            }
-            
-            return state;
-        }
-
-		function executeCheckersMove(moveStr, currentPlayer) {
-            const files = 'ABCDEFGH';
-            const isCapture = moveStr.includes('x');
-            const parts = moveStr.split(isCapture ? 'x' : '-');
-            
-            if (parts.length !== 2) return false;
-            
-            const fromSquare = parts[0].trim().toUpperCase();
-            const toSquare = parts[1].trim().toUpperCase();
-            
-            // Validate square format (should be like A1, B2, etc.)
-            if (fromSquare.length !== 2 || toSquare.length !== 2) return false;
-            
-            const fromCol = files.indexOf(fromSquare[0]);
-            const fromRow = 8 - parseInt(fromSquare[1]);
-            const toCol = files.indexOf(toSquare[0]);
-            const toRow = 8 - parseInt(toSquare[1]);
-            
-            // Validate coordinates are within board bounds
-            if (fromCol === -1 || toCol === -1 || 
-                fromRow < 0 || fromRow > 7 || 
-                toRow < 0 || toRow > 7 ||
-                isNaN(fromRow) || isNaN(toRow)) {
-                console.log(`Invalid coordinates: fromRow=${fromRow}, fromCol=${fromCol}, toRow=${toRow}, toCol=${toCol}`);
-                return false;
-            }
-            
-            const piece = checkersGame.board[fromRow][fromCol];
-            if (!piece || piece.color !== currentPlayer) {
-                console.log(`No valid piece at ${fromSquare} for ${currentPlayer}`);
-                return false;
-            }
-            
-            // Validate that destination is empty
-            if (checkersGame.board[toRow][toCol] !== null) {
-                console.log(`Destination ${toSquare} is not empty`);
-                return false;
-            }
-            
-            // For captures, validate there's a piece to capture and the move is diagonal by 2
-            if (isCapture) {
-                const rowDiff = Math.abs(toRow - fromRow);
-                const colDiff = Math.abs(toCol - fromCol);
-                
-                // Capture moves should be exactly 2 squares diagonally
-                if (rowDiff !== 2 || colDiff !== 2) {
-                    console.log(`Invalid capture distance: rowDiff=${rowDiff}, colDiff=${colDiff}`);
-                    return false;
-                }
-                
-                const midRow = Math.floor((fromRow + toRow) / 2);
-                const midCol = Math.floor((fromCol + toCol) / 2);
-                const capturedPiece = checkersGame.board[midRow][midCol];
-                
-                // Must have an opponent piece to capture
-                if (!capturedPiece || capturedPiece.color === currentPlayer) {
-                    console.log(`No valid piece to capture at ${files[midCol]}${8-midRow}`);
-                    return false;
-                }
-                
-                // Remove captured piece
-                checkersGame.board[midRow][midCol] = null;
-                console.log(`Captured piece at ${files[midCol]}${8-midRow}`);
-            } else {
-                // Regular moves should be exactly 1 square diagonally
-                const rowDiff = Math.abs(toRow - fromRow);
-                const colDiff = Math.abs(toCol - fromCol);
-                
-                if (rowDiff !== 1 || colDiff !== 1) {
-                    console.log(`Invalid regular move distance: rowDiff=${rowDiff}, colDiff=${colDiff}`);
-                    return false;
-                }
-                
-                // Regular pieces can only move forward (unless king)
-                if (!piece.king) {
-                    const correctDirection = (piece.color === 'red' && toRow > fromRow) || 
-                                           (piece.color === 'black' && toRow < fromRow);
-                    if (!correctDirection) {
-                        console.log(`Piece cannot move backward (not a king)`);
-                        return false;
-                    }
-                }
-            }
-            
-            // Execute move
-            checkersGame.board[toRow][toCol] = piece;
-            checkersGame.board[fromRow][fromCol] = null;
-            
-            // Check for king promotion
-            if ((piece.color === 'red' && toRow === 7) || (piece.color === 'black' && toRow === 0)) {
-                piece.king = true;
-                console.log(`${piece.color} piece promoted to king at ${toSquare}`);
-            }
-            
-            console.log(`Successfully executed move: ${moveStr}`);
-            return true;
-        }
-
         async function sendOthelloMove(sender) {
             if (!isRunning || othelloGame.gameOver) return;
 
@@ -2358,7 +1994,7 @@ Please continue with ${sentenceLimit} ${sentenceLimit === 1 ? 'sentence' : 'sent
                 body: JSON.stringify({
                     model: participant.model,
                     messages: messages,
-                    max_tokens: 2000,
+                    // max_tokens: 2000,
                     temperature: 0.7
                 })
             });
@@ -2435,7 +2071,6 @@ Please continue with ${sentenceLimit} ${sentenceLimit === 1 ? 'sentence' : 'sent
                         Math.floor((conversationData.endTime - conversationData.startTime) / 1000) : 
                         Math.floor((new Date() - conversationData.startTime) / 1000),
                     final_game_state: currentMode === 'chess' ? chessGame : 
-                                     currentMode === 'checkers' ? checkersGame :
                                      currentMode === 'othello' ? othelloGame :
                                      currentMode === 'story' ? storyGame : null
                 }
