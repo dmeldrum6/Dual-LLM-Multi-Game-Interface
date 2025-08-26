@@ -1359,20 +1359,21 @@
             document.getElementById('whiteDiscs').textContent = whiteCount;
         }
 
-        function initializeStory() {
-            storyGame.sentences = [];
-            storyGame.currentSentences = [];
-            storyGame.wordCount = 0;
-            storyGame.sentenceCount = 0;
-            storyGame.prompt = document.getElementById('storyPrompt').value;
-            storyGame.genre = document.getElementById('storyGenre').value;
-            
-            document.getElementById('storyText').innerHTML = '<div style="text-align: center; color: var(--text-secondary); font-style: italic; padding: 40px;">The story will appear here as the LLMs collaborate...</div>';
-            document.getElementById('storyStatus').textContent = 'Ready to begin story';
-            document.getElementById('wordCount').textContent = '0';
-            document.getElementById('sentenceCount').textContent = '0';
-            document.getElementById('storyProgress').textContent = 'Story not started';
-        }
+		function initializeStory() {
+			// Get fresh values from the form inputs
+			storyGame.prompt = document.getElementById('storyPrompt').value.trim();
+			storyGame.genre = document.getElementById('storyGenre').value;
+			storyGame.sentences = [];
+			storyGame.currentSentences = [];
+			storyGame.wordCount = 0;
+			storyGame.sentenceCount = 0;
+			
+			document.getElementById('storyText').innerHTML = '<div style="text-align: center; color: var(--text-secondary); font-style: italic; padding: 40px;">The story will appear here as the LLMs collaborate...</div>';
+			document.getElementById('storyStatus').textContent = 'Ready to begin story';
+			document.getElementById('wordCount').textContent = '0';
+			document.getElementById('sentenceCount').textContent = '0';
+			document.getElementById('storyProgress').textContent = 'Story not started';
+		}
 
         function renderStory() {
             const storyElement = document.getElementById('storyText');
@@ -1415,117 +1416,137 @@
         }
 
         async function startConversation() {
-            // Validate inputs
-            const requiredFields = ['endpointA', 'apiKeyA', 'modelA', 'endpointB', 'apiKeyB', 'modelB'];
-            if (currentMode === 'conversation') {
-                requiredFields.push('topic');
-            } else if (currentMode === 'story') {
-                requiredFields.push('storyPrompt');
-            }
-            
-            for (const field of requiredFields) {
-                const element = document.getElementById(field);
-                if (!element || !element.value.trim()) {
-                    alert(`Please fill in ${field}`);
-                    return;
-                }
-            }
+			// Reset all states first to ensure clean start
+			resetAllStates();
 
-            // Initialize conversation data
-            conversationData = {
-                mode: currentMode,
-                topic: currentMode === 'conversation' ? document.getElementById('topic').value.trim() : 
-                       currentMode === 'story' ? document.getElementById('storyPrompt').value.trim() : 
-                       currentMode.charAt(0).toUpperCase() + currentMode.slice(1) + ' Game',
-                participants: [
-                    {
-                        id: 'llm_a',
-                        endpoint: document.getElementById('endpointA').value.trim(),
-                        model: document.getElementById('modelA').value.trim(),
-                        system_prompt: document.getElementById('systemPromptA').value.trim()
-                    },
-                    {
-                        id: 'llm_b',
-                        endpoint: document.getElementById('endpointB').value.trim(),
-                        model: document.getElementById('modelB').value.trim(),
-                        system_prompt: document.getElementById('systemPromptB').value.trim()
-                    }
-                ],
-                conversation: [],
-                startTime: new Date()
-            };
+			// Re-read current form values for topic/prompt
+			let topicValue = '';
+			if (currentMode === 'conversation') {
+				topicValue = document.getElementById('topic').value.trim();
+			} else if (currentMode === 'story') {
+				topicValue = document.getElementById('storyPrompt').value.trim();
+				// Also update the story game with fresh values
+				storyGame.prompt = topicValue;
+				storyGame.genre = document.getElementById('storyGenre').value;
+			}
 
-            conversationHistory = [];
-            currentTurn = 'llm_a';
-            isRunning = true;
+			// Validate inputs
+			const requiredFields = ['endpointA', 'apiKeyA', 'modelA', 'endpointB', 'apiKeyB', 'modelB'];
+			if (currentMode === 'conversation') {
+				if (!topicValue) {
+					alert('Please fill in the conversation topic');
+					return;
+				}
+			} else if (currentMode === 'story') {
+				if (!topicValue) {
+					alert('Please fill in the story prompt');
+					return;
+				}
+			}
+			
+			for (const field of requiredFields) {
+				const element = document.getElementById(field);
+				if (!element || !element.value.trim()) {
+					alert(`Please fill in ${field}`);
+					return;
+				}
+			}
 
-            // Initialize game-specific data
-            if (currentMode === 'chess') {
-                conversationData.chess_game = {
-                    moves: [],
-                    final_position: null,
-                    winner: null
-                };
-            } else if (currentMode === 'checkers') {
-                conversationData.checkers_game = {
-                    moves: [],
-                    final_position: null,
-                    winner: null
-                };
-            } else if (currentMode === 'othello') {
-                conversationData.othello_game = {
-                    moves: [],
-                    final_position: null,
-                    winner: null
-                };
-            } else if (currentMode === 'story') {
-                conversationData.story_data = {
-                    prompt: storyGame.prompt,
-                    genre: storyGame.genre,
-                    sentences: []
-                };
-            }
+			// Initialize conversation data with fresh values
+			conversationData = {
+				mode: currentMode,
+				topic: topicValue || (currentMode.charAt(0).toUpperCase() + currentMode.slice(1) + ' Game'),
+				participants: [
+					{
+						id: 'llm_a',
+						endpoint: document.getElementById('endpointA').value.trim(),
+						model: document.getElementById('modelA').value.trim(),
+						system_prompt: document.getElementById('systemPromptA').value.trim()
+					},
+					{
+						id: 'llm_b',
+						endpoint: document.getElementById('endpointB').value.trim(),
+						model: document.getElementById('modelB').value.trim(),
+						system_prompt: document.getElementById('systemPromptB').value.trim()
+					}
+				],
+				conversation: [],
+				startTime: new Date()
+			};
 
-            // Update UI
-            document.getElementById('startBtn').disabled = true;
-            document.getElementById('stopBtn').disabled = false;
-            document.getElementById('exportBtn').disabled = false;
-            document.getElementById('stats').style.display = 'flex';
-            document.getElementById('conversation').innerHTML = '';
+			conversationHistory = [];
+			currentTurn = 'llm_a';
+			isRunning = true;
 
-            // Start duration timer
-            durationInterval = setInterval(updateDuration, 1000);
+			// Initialize game-specific data
+			if (currentMode === 'chess') {
+				conversationData.chess_game = {
+					moves: [],
+					final_position: null,
+					winner: null
+				};
+			} else if (currentMode === 'checkers') {
+				conversationData.checkers_game = {
+					moves: [],
+					final_position: null,
+					winner: null
+				};
+			} else if (currentMode === 'othello') {
+				conversationData.othello_game = {
+					moves: [],
+					final_position: null,
+					winner: null
+				};
+			} else if (currentMode === 'story') {
+				conversationData.story_data = {
+					prompt: topicValue, // Use the fresh value from form
+					genre: document.getElementById('storyGenre').value,
+					sentences: []
+				};
+			}
 
-            // Start the appropriate game/conversation
-            if (currentMode === 'chess') {
-                document.getElementById('gameStatus').textContent = 'Game in progress - White to move';
-                await sendChessMove(currentTurn);
-            } else if (currentMode === 'checkers') {
-                document.getElementById('checkersStatus').textContent = 'Game in progress - Red to move';
-                await sendCheckersMove(currentTurn);
-            } else if (currentMode === 'othello') {
-                document.getElementById('othelloStatus').textContent = 'Game in progress - Black to move';
-                await sendOthelloMove(currentTurn);
-            } else if (currentMode === 'story') {
-                document.getElementById('storyStatus').textContent = 'Story in progress';
-                await sendStoryContribution(currentTurn);
-            } else {
-                await sendMessage(currentTurn, conversationData.topic);
-            }
-        }
+			// Update UI
+			document.getElementById('startBtn').disabled = true;
+			document.getElementById('stopBtn').disabled = false;
+			document.getElementById('exportBtn').disabled = false;
+			document.getElementById('stats').style.display = 'flex';
+			document.getElementById('conversation').innerHTML = '';
 
-        function stopConversation() {
-            isRunning = false;
-            conversationData.endTime = new Date();
-            
-            document.getElementById('startBtn').disabled = false;
-            document.getElementById('stopBtn').disabled = true;
-            document.getElementById('currentSpeaker').textContent = 'Stopped';
-            
-            clearInterval(durationInterval);
-            
-            addMessage('system', 'Game/Conversation stopped by user.');
-        }
+			// Start duration timer
+			durationInterval = setInterval(updateDuration, 1000);
+
+			// Start the appropriate game/conversation
+			if (currentMode === 'chess') {
+				document.getElementById('gameStatus').textContent = 'Game in progress - White to move';
+				await sendChessMove(currentTurn);
+			} else if (currentMode === 'checkers') {
+				document.getElementById('checkersStatus').textContent = 'Game in progress - Red to move';
+				await sendCheckersMove(currentTurn);
+			} else if (currentMode === 'othello') {
+				document.getElementById('othelloStatus').textContent = 'Game in progress - Black to move';
+				await sendOthelloMove(currentTurn);
+			} else if (currentMode === 'story') {
+				document.getElementById('storyStatus').textContent = 'Story in progress';
+				await sendStoryContribution(currentTurn);
+			} else {
+				await sendMessage(currentTurn, conversationData.topic);
+			}
+		}
+
+		function stopConversation() {
+			isRunning = false;
+			conversationData.endTime = new Date();
+			
+			document.getElementById('startBtn').disabled = false;
+			document.getElementById('stopBtn').disabled = true;
+			document.getElementById('currentSpeaker').textContent = 'Stopped';
+			
+			if (durationInterval) {
+				clearInterval(durationInterval);
+			}
+			
+			addMessage('system', 'Game/Conversation stopped by user.');
+		}
 
         async function sendChessMove(sender, retryContext = null) {
             if (!isRunning || chessGame.gameOver) return;
@@ -1605,7 +1626,7 @@ Respond with ONLY your move in standard algebraic notation. Examples: "e4", "Nf3
         }
 
 		async function processChessMove(sender, move) {
-            // Simple validation - in a real app, you'd want proper chess engine validation
+            // Simple validation - not proper chess engine validation
             const gameOverMoves = ['resign', 'draw', 'checkmate'];
             
             if (gameOverMoves.includes(move.toLowerCase())) {
@@ -1833,96 +1854,99 @@ You are playing as ${sender === 'llm_a' ? 'Black' : 'White'}. It is your turn to
         }
 
         async function sendStoryContribution(sender) {
-            if (!isRunning) return;
+			if (!isRunning) return;
 
-            const participant = conversationData.participants.find(p => p.id === sender);
-            if (!participant) return;
+			const participant = conversationData.participants.find(p => p.id === sender);
+			if (!participant) return;
 
-            showLoading(sender);
-            document.getElementById('currentSpeaker').textContent = sender.toUpperCase();
+			showLoading(sender);
+			document.getElementById('currentSpeaker').textContent = sender.toUpperCase();
 
-            try {
-                const recentContext = storyGame.sentences.slice(-5).map(s => s.text).join(' ');
-                const sentenceLimit = parseInt(document.getElementById('sentenceLimit').value) || 3;
-                const genre = document.getElementById('storyGenre').value;
-                
-                let contextMessage = `${participant.system_prompt}
+			try {
+				const recentContext = storyGame.sentences.slice(-5).map(s => s.text).join(' ');
+				const sentenceLimit = parseInt(document.getElementById('sentenceLimit').value) || 3;
+				
+				// Use the fresh prompt from the conversation data or form
+				const currentPrompt = conversationData.story_data?.prompt || storyGame.prompt || document.getElementById('storyPrompt').value.trim();
+				const currentGenre = conversationData.story_data?.genre || storyGame.genre || document.getElementById('storyGenre').value;
+				
+				let contextMessage = `${participant.system_prompt}
 
-STORY CONTEXT:
-Genre: ${genre.charAt(0).toUpperCase() + genre.slice(1)}
-Initial prompt: ${storyGame.prompt}
+		STORY CONTEXT:
+		Genre: ${currentGenre.charAt(0).toUpperCase() + currentGenre.slice(1)}
+		Initial prompt: ${currentPrompt}
 
-${storyGame.sentences.length > 0 ? 'Recent story text:\n' + recentContext : 'This is the beginning of the story.'}
+		${storyGame.sentences.length > 0 ? 'Recent story text:\n' + recentContext : 'This is the beginning of the story.'}
 
-Please continue with ${sentenceLimit} ${sentenceLimit === 1 ? 'sentence' : 'sentences'} that advance the ${genre} story.`;
+		Please continue with ${sentenceLimit} ${sentenceLimit === 1 ? 'sentence' : 'sentences'} that advance the ${currentGenre} story.`;
 
-                const messages = [
-                    { role: 'system', content: contextMessage },
-                    { 
-                        role: 'user', 
-                        content: storyGame.sentences.length === 0 ? 
-                            `Begin the story with the prompt: "${storyGame.prompt}"` :
-                            'Continue the story from where it left off.'
-                    }
-                ];
+				const messages = [
+					{ role: 'system', content: contextMessage },
+					{ 
+						role: 'user', 
+						content: storyGame.sentences.length === 0 ? 
+							`Begin the story with the prompt: "${currentPrompt}"` :
+							'Continue the story from where it left off.'
+					}
+				];
 
-                const response = await makeAPICall(participant, messages);
-                
-                if (!isRunning) return;
+				const response = await makeAPICall(participant, messages);
+				
+				if (!isRunning) return;
 
-                hideLoading();
-                
-                if (response && response.trim()) {
-                    // Split contribution into sentences
-                    const sentences = response.split(/[.!?]+/).filter(s => s.trim());
-                    
-                    sentences.forEach(sentence => {
-                        if (sentence.trim()) {
-                            const cleanSentence = sentence.trim();
-                            const fullSentence = cleanSentence.endsWith('.') || cleanSentence.endsWith('!') || cleanSentence.endsWith('?') ? 
-                                                cleanSentence : cleanSentence + '.';
-                            
-                            storyGame.sentences.push({
-                                text: fullSentence,
-                                author: sender,
-                                timestamp: new Date()
-                            });
-                        }
-                    });
-                    
-                    addMessage(sender, response);
-                    renderStory();
-                    updateStoryStats();
-                    
-                    const messageData = {
-                        speaker: sender,
-                        message: response,
-                        timestamp: new Date().toISOString()
-                    };
-                    conversationHistory.push(messageData);
-                    conversationData.conversation.push(messageData);
-                    
-                    if (conversationData.story_data) {
-                        conversationData.story_data.sentences = [...storyGame.sentences];
-                    }
-                    
-                    document.getElementById('messageCount').textContent = conversationHistory.length;
-                    
-                    currentTurn = currentTurn === 'llm_a' ? 'llm_b' : 'llm_a';
-                    
-                    setTimeout(() => {
-                        if (isRunning) {
-                            sendStoryContribution(currentTurn);
-                        }
-                    }, 2000);
-                }
-                
-            } catch (error) {
-                hideLoading();
-                addMessage('system', `Error: ${error.message}`);
-                console.error('API Error:', error);
-            }
-        }
+				hideLoading();
+				
+				if (response && response.trim()) {
+					// Split contribution into sentences
+					const sentences = response.split(/[.!?]+/).filter(s => s.trim());
+					
+					sentences.forEach(sentence => {
+						if (sentence.trim()) {
+							const cleanSentence = sentence.trim();
+							const fullSentence = cleanSentence.endsWith('.') || cleanSentence.endsWith('!') || cleanSentence.endsWith('?') ? 
+												cleanSentence : cleanSentence + '.';
+							
+							storyGame.sentences.push({
+								text: fullSentence,
+								author: sender,
+								timestamp: new Date()
+							});
+						}
+					});
+					
+					addMessage(sender, response);
+					renderStory();
+					updateStoryStats();
+					
+					const messageData = {
+						speaker: sender,
+						message: response,
+						timestamp: new Date().toISOString()
+					};
+					conversationHistory.push(messageData);
+					conversationData.conversation.push(messageData);
+					
+					if (conversationData.story_data) {
+						conversationData.story_data.sentences = [...storyGame.sentences];
+					}
+					
+					document.getElementById('messageCount').textContent = conversationHistory.length;
+					
+					currentTurn = currentTurn === 'llm_a' ? 'llm_b' : 'llm_a';
+					
+					setTimeout(() => {
+						if (isRunning) {
+							sendStoryContribution(currentTurn);
+						}
+					}, 2000);
+				}
+				
+			} catch (error) {
+				hideLoading();
+				addMessage('system', `Error: ${error.message}`);
+				console.error('API Error:', error);
+			}
+		}
 
         async function sendMessage(sender, content) {
             if (!isRunning) return;
@@ -1995,7 +2019,7 @@ Please continue with ${sentenceLimit} ${sentenceLimit === 1 ? 'sentence' : 'sent
                     model: participant.model,
                     messages: messages,
                     // max_tokens: 2000,
-                    temperature: 0.7
+                    // temperature: 0.7
                 })
             });
 
@@ -2086,9 +2110,107 @@ Please continue with ${sentenceLimit} ${sentenceLimit === 1 ? 'sentence' : 'sent
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
+		
+		// Function to completely reset all game/conversation states
+		function resetAllStates() {
+			// Stop any running processes
+			isRunning = false;
+			if (durationInterval) {
+				clearInterval(durationInterval);
+				durationInterval = null;
+			}
+
+			// Reset conversation data
+			conversationData = {
+				topic: '',
+				participants: [],
+				conversation: [],
+				startTime: null,
+				endTime: null
+			};
+
+			conversationHistory = [];
+			currentTurn = 'llm_a';
+
+			// Reset all UI elements
+			document.getElementById('conversation').innerHTML = `
+				<div class="empty-state">
+					<div class="empty-state-icon">💬</div>
+					<p>Configure your LLMs above and click "Start Game" to begin</p>
+				</div>
+			`;
+			
+			document.getElementById('stats').style.display = 'none';
+			document.getElementById('messageCount').textContent = '0';
+			document.getElementById('duration').textContent = '00:00';
+			document.getElementById('currentSpeaker').textContent = '-';
+
+			// Reset game-specific states
+			resetChessGame();
+			resetOthelloGame();
+			resetStoryGame();
+		}
+
+		function resetChessGame() {
+			chessGame = {
+				board: null,
+				moves: [],
+				currentFEN: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+				gameOver: false,
+				winner: null,
+				whiteToMove: true,
+				castlingRights: { K: true, Q: true, k: true, q: true },
+				enPassantTarget: null,
+				lastMove: null
+			};
+			
+			if (currentMode === 'chess') {
+				initializeChessBoard();
+			}
+		}
+
+		function resetOthelloGame() {
+			othelloGame = {
+				board: null,
+				moves: [],
+				gameOver: false,
+				winner: null,
+				currentPlayer: 'black',
+				blackCount: 2,
+				whiteCount: 2
+			};
+			
+			if (currentMode === 'othello') {
+				initializeOthello();
+			}
+		}
+
+		function resetStoryGame() {
+			storyGame = {
+				sentences: [],
+				currentSentences: [],
+				wordCount: 0,
+				sentenceCount: 0,
+				prompt: '',
+				genre: 'mystery'
+			};
+			
+			if (currentMode === 'story') {
+				initializeStory();
+			}
+		}
 
         // Initialize with conversation mode
         setMode('conversation');
+		
+		// Add event listeners to reset state when mode changes
+		document.querySelectorAll('.mode-btn').forEach(btn => {
+			btn.addEventListener('click', function() {
+				if (!isRunning) {
+					resetAllStates();
+				}
+			});
+		});
     </script>
 </body>
 </html> 
