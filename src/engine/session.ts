@@ -3,7 +3,7 @@
 
 import { batch, signal } from '@preact/signals';
 import { chat, isAbort, sleep, splitThinking, type ChatResult } from '../lib/llm';
-import type { AnyGame, GameResult, Player, Side } from './types';
+import type { AnyGame, GameResult, Player, Side, Verdict } from './types';
 
 export type Status = 'idle' | 'running' | 'paused' | 'error' | 'finished' | 'stopped';
 
@@ -165,14 +165,36 @@ export function addNote(text: string) {
   if (t) pendingNotes.push(t);
 }
 
-function finish(res: GameResult) {
+function finish(res: GameResult, announce = true) {
   batch(() => {
     result.value = res;
     thinkingSide.value = null;
     endedAt.value = Date.now();
     status.value = 'finished';
   });
-  push({ side: res.winner, kind: 'system', text: res.summary, reasoning: '' });
+  if (announce) push({ side: res.winner, kind: 'system', text: res.summary, reasoning: '' });
+}
+
+/** Ask the judge model for a verdict; null if it failed. */
+async function runVerdict(v: Verdict, signal: AbortSignal): Promise<GameResult | null> {
+  const id = push({ side: null, kind: 'verdict', text: '', reasoning: '', streaming: true });
+  try {
+    const r = await chat(v.judge, v.messages, {
+      signal,
+      onProgress: (content, reasoning) => {
+        const split = splitThinking(content);
+        update(id, { text: split.answer, reasoning: [reasoning, split.thinking].filter(Boolean).join('\n\n') });
+      },
+    });
+    const res = v.parse(r.content);
+    update(id, { text: r.content, reasoning: r.reasoning, streaming: false, ms: r.ms });
+    push({ side: res.winner, kind: 'system', text: res.summary, reasoning: '' });
+    return res;
+  } catch (err) {
+    if (isAbort(err)) throw err;
+    update(id, { text: `The judge could not be reached: ${(err as Error).message}`, streaming: false });
+    return null;
+  }
 }
 
 async function loop(id: number, signal: AbortSignal) {
@@ -195,7 +217,14 @@ async function loop(id: number, signal: AbortSignal) {
       }
 
       const res = game.result(state, setup);
-      if (res) return finish(res);
+      if (res) {
+        const v = game.verdict?.(state, setup, players);
+        if (!v) return finish(res);
+        push({ side: null, kind: 'system', text: res.summary, reasoning: '' });
+        const judged = await runVerdict(v, signal);
+        if (live()) finish(judged ?? res, false);
+        return;
+      }
 
       const side = game.currentSide(state);
       const forced = game.forcedMove?.(state, side);

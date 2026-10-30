@@ -1,13 +1,14 @@
 import { useEffect } from 'preact/hooks';
-import { BookOpen, ChessKnight, CircleDot, Download, MessagesSquare, Monitor, Moon, PanelLeftClose, PanelLeftOpen, Pause, Play, RotateCcw, Square, Sun, TriangleAlert } from 'lucide-preact';
+import { ArrowLeftRight, BookOpen, ChessKnight, CircleDot, Columns4, Download, MessagesSquare, Monitor, Moon, PanelLeftClose, PanelLeftOpen, Pause, Play, RotateCcw, Square, Sun, TriangleAlert } from 'lucide-preact';
 import { GAMES, gameById } from './games';
 import { gameId, pace, players, rememberKeys, resolvedPlayers, sidebarOpen, theme, type Theme } from './lib/settings';
 import * as session from './engine/session';
-import { exportJson } from './lib/export';
+import { exportJson, exportMarkdown, exportPgn } from './lib/export';
+import { ModeratorBar } from './components/ModeratorBar';
 import { PlayerCard } from './components/PlayerCard';
 import { getSetup, SetupPanel } from './components/SetupPanel';
 import { Scoreboard } from './components/Scoreboard';
-import { ChessBoard, OthelloBoard } from './components/Boards';
+import { ChessBoard, Connect4Board, OthelloBoard } from './components/Boards';
 import { Feed } from './components/Feed';
 import { ConversationView, StoryView } from './components/TextStages';
 
@@ -19,7 +20,7 @@ const THEMES: { id: Theme; icon: typeof Sun; label: string }[] = [
   { id: 'dark', icon: Moon, label: 'Dark' },
 ];
 
-const GAME_ICONS: Record<string, typeof Sun> = { chess: ChessKnight, othello: CircleDot, conversation: MessagesSquare, story: BookOpen };
+const GAME_ICONS: Record<string, typeof Sun> = { chess: ChessKnight, othello: CircleDot, connect4: Columns4, conversation: MessagesSquare, story: BookOpen };
 
 const isActive = (s: session.Status) => s === 'running' || s === 'paused' || s === 'error';
 
@@ -66,10 +67,34 @@ function Controls() {
         <span class="small mono">{(pace.value / 1000).toFixed(1)}s</span>
       </label>
       <span class="spacer" />
-      <button class="btn ghost" disabled={!session.sessionInfo.value || session.feed.value.length === 0} onClick={exportJson}>
-        <Download size={16} /> Export
-      </button>
+      <ExportMenu />
     </div>
+  );
+}
+
+function ExportMenu() {
+  const info = session.sessionInfo.value;
+  const disabled = !info || session.feed.value.length === 0;
+  const close = (e: Event) => (e.currentTarget as HTMLElement).closest('details')?.removeAttribute('open');
+  return (
+    <details class={`menu ${disabled ? 'disabled' : ''}`}>
+      <summary class="btn ghost" aria-disabled={disabled} onClick={(e) => disabled && e.preventDefault()}>
+        <Download size={16} /> Export
+      </summary>
+      <div class="menu-list" role="menu">
+        <button role="menuitem" onClick={(e) => (close(e), exportMarkdown())}>
+          Markdown transcript
+        </button>
+        {info?.game.id === 'chess' && (
+          <button role="menuitem" onClick={(e) => (close(e), exportPgn())}>
+            PGN (open in any chess app)
+          </button>
+        )}
+        <button role="menuitem" onClick={(e) => (close(e), exportJson())}>
+          Full session (JSON)
+        </button>
+      </div>
+    </details>
   );
 }
 
@@ -88,6 +113,7 @@ function Stage() {
   if (!state) main = null;
   else if (game.id === 'chess') main = <ChessBoard state={state} />;
   else if (game.id === 'othello') main = <OthelloBoard state={state} hints={!session.result.value} />;
+  else if (game.id === 'connect4') main = <Connect4Board state={state} />;
   else if (game.id === 'story') main = <StoryView state={state} entries={entries} players={ps} title={setup.premise} finished={!!session.result.value} />;
   else main = <ConversationView entries={entries} players={ps} empty={`Topic: ${setup.topic}`} />;
 
@@ -115,6 +141,7 @@ function Stage() {
         <div class="arena-main">{main}</div>
         {game.kind === 'board' && <Feed entries={entries} players={ps} sideLabels={labels} />}
       </div>
+      {game.inject && isActive(s) && <ModeratorBar mode={game.id === 'story' ? 'story' : 'conversation'} />}
     </main>
   );
 }
@@ -127,6 +154,12 @@ export function App() {
 
   useEffect(() => {
     session.preview(game, getSetup(game.id));
+    // Expose the top bar height so the mobile settings drawer sits below it.
+    const bar = document.querySelector('.topbar');
+    if (!bar) return;
+    const ro = new ResizeObserver(() => document.documentElement.style.setProperty('--topbar-h', `${bar.getBoundingClientRect().height}px`));
+    ro.observe(bar);
+    return () => ro.disconnect();
   }, []);
 
   useEffect(() => {
@@ -186,6 +219,9 @@ export function App() {
 
       <aside class="sidebar" aria-label="Settings">
         <PlayerCard side={0} sideLabel={labels[0]} locked={locked} />
+        <button class="swap" disabled={locked} onClick={() => (players.value = [players.value[1], players.value[0]])} title="Swap Player A and Player B">
+          <ArrowLeftRight size={14} /> Swap sides
+        </button>
         <PlayerCard side={1} sideLabel={labels[1]} locked={locked} />
         {players.value.some((p) => p.apiKey) && (
           <label class="check small remember">

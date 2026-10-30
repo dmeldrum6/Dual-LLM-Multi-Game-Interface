@@ -77,7 +77,7 @@ export const gameId = signal(saved.gameId ?? 'chess');
 export const setups = signal<Record<string, any>>(saved.setups ?? {});
 export const pace = signal(saved.pace ?? 1200);
 export const theme = signal<Theme>(saved.theme ?? 'system');
-export const sidebarOpen = signal(saved.sidebarOpen ?? true);
+export const sidebarOpen = signal(saved.sidebarOpen ?? window.innerWidth > 900);
 
 effect(() => {
   const data: Saved = {

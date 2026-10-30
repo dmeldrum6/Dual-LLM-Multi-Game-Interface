@@ -1,5 +1,5 @@
 import { useRef } from 'preact/hooks';
-import { TriangleAlert } from 'lucide-preact';
+import { Gavel, TriangleAlert } from 'lucide-preact';
 import { Dots, Markdown, Thinking, useStickToBottom } from './Feed';
 import type { FeedEntry } from '../engine/session';
 import type { Player } from '../engine/types';
@@ -22,7 +22,11 @@ export function ConversationView({ entries, players, empty }: { entries: FeedEnt
         if (e.kind === 'verdict')
           return (
             <div class="verdict" key={e.id}>
-              <Markdown text={e.text} />
+              <div class="verdict-head">
+                <Gavel size={16} /> Judge's verdict
+              </div>
+              <Thinking text={e.reasoning} live={e.streaming && !e.text} />
+              {e.streaming && !e.text && !e.reasoning ? <Dots /> : <Markdown text={e.text.replace(/\n?\**winner\s*[:=].*$/i, '').trim()} />}
             </div>
           );
         const side = e.side!;

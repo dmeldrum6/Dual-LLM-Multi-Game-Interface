@@ -45,8 +45,16 @@ export interface GameDef<State, Setup> {
   result(state: State, setup: Setup): GameResult | null;
   /** Add a moderator note (text games). */
   inject?(state: State, note: string): State;
+  /** Optional judging step run after the game ends (e.g. debates). */
+  verdict?(state: State, setup: Setup, players: [Player, Player]): Verdict | null;
   /** Short status line, e.g. "White to move". */
   status?(state: State, setup: Setup): string;
+}
+
+export interface Verdict {
+  judge: Player;
+  messages: ChatMessage[];
+  parse(answer: string): GameResult;
 }
 
 export type AnyGame = GameDef<any, any>;

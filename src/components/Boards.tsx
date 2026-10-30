@@ -2,6 +2,7 @@ import { useMemo } from 'preact/hooks';
 import { ChessBishop, ChessKing, ChessKnight, ChessPawn, ChessQueen, ChessRook } from 'lucide-preact';
 import { replay, type ChessState } from '../games/chess';
 import { legalMoves, type OthelloState } from '../games/othello';
+import { COLS, ROWS, type Connect4State } from '../games/connect4';
 
 const FILES = 'abcdefgh';
 const ICON = { k: ChessKing, q: ChessQueen, r: ChessRook, b: ChessBishop, n: ChessKnight, p: ChessPawn };
@@ -62,6 +63,37 @@ export function ChessBoard({ state }: { state: ChessState }) {
         )}
       </div>
       <Captured pieces={captured.b} color="b" />
+    </div>
+  );
+}
+
+export function Connect4Board({ state }: { state: Connect4State }) {
+  const win = new Set(state.winLine?.map(([r, c]) => `${r},${c}`));
+  return (
+    <div class="board-wrap c4-wrap">
+      <div class="c4-cols" aria-hidden="true">
+        {Array.from({ length: COLS }, (_, c) => (
+          <span>{c + 1}</span>
+        ))}
+      </div>
+      <div class="c4" role="grid" aria-label="Connect Four board">
+        {state.board.map((row, r) =>
+          row.map((v, c) => {
+            const isLast = state.last?.row === r && state.last?.col === c;
+            return (
+              <div class="hole" role="gridcell" aria-label={`column ${c + 1} row ${ROWS - r}: ${v === 0 ? 'red' : v === 1 ? 'yellow' : 'empty'}`}>
+                {v !== null && (
+                  <span
+                    key={isLast ? `${r}${c}-${state.history.length}` : `${r}${c}`}
+                    class={`token ${v === 0 ? 'red' : 'yellow'} ${isLast ? 'falling' : ''} ${win.has(`${r},${c}`) ? 'win' : ''}`}
+                    style={isLast ? { '--fall': `${-(r + 1) * 118}%` } : undefined}
+                  />
+                )}
+              </div>
+            );
+          }),
+        )}
+      </div>
     </div>
   );
 }
