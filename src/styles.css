@@ -1237,7 +1237,7 @@ input[type='range'] {
   margin: 0 0 1em;
   text-indent: 1.5em;
   padding-left: 10px;
-  border-left: 2px solid transparent;
+  border-left: 2px solid color-mix(in srgb, var(--side) 45%, transparent);
   transition: border-color 0.2s, background 0.2s;
   animation: rise 0.4s ease;
 }
